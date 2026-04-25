@@ -1,8 +1,8 @@
-# Groovy & Spock Framework para Testes de Aplicação <font size="2">versão 1.0 - Flisol 2026</font>
+# Groovy & Spock Framework para Testes de Aplicação <font size="2">versão 1.1 - Flisol 2026</font>
 
 ![alt Flisol](resources/imgs/flisol.png "FliSol")
 
-- [Groovy \& Spock Framework para Testes de Aplicação versão 1.0 - Flisol 2026](#groovy--spock-framework-para-testes-de-aplicação-versão-10---flisol-2026)
+- [Groovy \& Spock Framework para Testes de Aplicação versão 1.1 - Flisol 2026](#groovy--spock-framework-para-testes-de-aplicação-versão-11---flisol-2026)
   - [Apresentação Pessoal](#apresentação-pessoal)
   - [Introdução ao Groovy](#introdução-ao-groovy)
     - [Versões Java suportadas](#versões-java-suportadas)
@@ -22,7 +22,7 @@
     - [Closures](#closures)
     - [Currying](#currying)
     - [Memoization](#memoization)
-    - [Composition e Trampoline](#composition-e-trampoline)
+    - [Composition](#composition)
   - [Metaprogramação e DSLs](#metaprogramação-e-dsls)
     - [Métodos Mágicos: methodMissing](#métodos-mágicos-methodmissing)
     - [AST Transformations](#ast-transformations)
@@ -57,7 +57,7 @@ Sou o Eduardo Vieira, Analista Programador. Considero-me +1 curioso da Computaç
 
 ## Introdução ao Groovy
 
-**O que é Groovy?** É uma linguagem de programção dinâmica construída para a plataforma Java (JVM). Desenvolvido por Jim Whitehead e Guillaume Laforge, o Groovy permite escrever código mais conciso do que Java enquanto mantém compatibilidade total com todas as bibliotecas Java existentes.
+**O que é Groovy?** É uma linguagem de programção dinâmica construída para a plataforma Java (JVM). Criada por James Strachan em 2003, o Groovy permite escrever código mais conciso do que Java enquanto mantém compatibilidade total com todas as bibliotecas Java existentes.
 
 **Características principais:**
 
@@ -102,8 +102,6 @@ Identificadores podem começar com letras, `$` ou `_`. Contém letras, dígitos,
 def nomeVar = 10
 def $_variavelPrivada = 20
 def variable_with_underscores = 30
-// Identificadores reservados precisam de aspas
-def "class" = 1  // funciona!
 ```
 
 ### Strings e Interpolação
@@ -128,11 +126,8 @@ Hoje faz sol e temperatura é de 28°C.
 """
 
 // Regex sem excesso de backslashes
-def pattern = /[0-9]+\\.[0-9]+/
-assert pattern.matcher('123.456').matches()
-
-// Dollar-slashy para URLs com $ e /
-def dollarSlashy = $"/http://example.com/path?key=$value/"
+def pattern = ~/[0-9]+\.[0-9]+/
+assert '123.456' ==~ pattern
 ```
 
 ---
@@ -189,7 +184,9 @@ assert !0
 assert !''
 assert ![]
 assert ![:]
-assert Boolean.parseBoolean('groovy') // true
+assert 'groovy' as boolean
+assert [1, 2, 3] as boolean
+assert -1 as boolean
 ```
 
 ---
@@ -207,8 +204,8 @@ def numeros = [1, 2, 3, 4, 5]
 numeros << 6  // [1, 2, 3, 4, 5, 6]
 
 // Operações poderosas
-assert numeros.collect { it * 2 } == [2, 4, 6, 8, 10]
-assert numeros.findAll { it > 2 } == [3, 4, 5]
+assert numeros.collect { it * 2 } == [2, 4, 6, 8, 10, 12]
+assert numeros.findAll { it > 2 } == [3, 4, 5, 6]
 
 def grupos = numeros.groupBy { it % 2 }
 assert grupos == [0: [2, 4, 6], 1: [1, 3, 5]]
@@ -223,7 +220,10 @@ assert numeros.min() == 1
 
 // Criação com ranges
 def pares = (0..10).step(2)    // [0, 2, 4, 6, 8, 10]
-def reverse = (10 downto 1) // [10, 9, ..., 1]
+assert pares == [0, 2, 4, 6, 8, 10]
+
+def reverse = (10..1) // [10, 9, ..., 1]
+assert reverse == [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 ```
 
 ### Mapas e Operações
@@ -238,12 +238,13 @@ assert cores['green'] == '#00FF00'
 
 // Adicionar novo entry
 cores.yellow = '#FFFF00'
+assert cores.yellow == '#FFFF00'
 
 // Operações avançadas
- def pessoas = [
-     ana: [idade: 30, cidade: 'SP'],
-     joao: [idade: 25, cidade: 'RJ']
- ]
+def pessoas = [
+        ana: [idade: 30, cidade: 'SP'],
+        joao: [idade: 25, cidade: 'RJ']
+]
 
 def jovens = pessoas.findAll { _, pessoa -> pessoa.idade < 30 }
 assert jovens == [joao: [idade: 25, cidade: 'RJ']]
@@ -277,7 +278,6 @@ assert mapa.cidade == 'SP'
 assert dobrar(4) == 8
 assert 'test'.sayHello() == 'Hi!'
 ```
-
 
 ```groovy
 def populacao = 1_500_000_000
@@ -316,7 +316,7 @@ assert 10 / 2 == new BigDecimal('5')
 assert 10.0 / 2 == 5.0
 assert 2 ** 3 == 8
 assert 2.0 ** 3 == 8.0
-assert 2G ** 100 == 2^100G
+//assert (2G ** 100) == (2 ^ 100G)
 ```
 
 ---
@@ -346,21 +346,29 @@ A anotação `@CompileStatic` instrui o compilador Groovy a aplicar compilação
 **Exemplo:**
 
 ```groovy
+import groovy.transform.CompileStatic
+
 @CompileStatic
 class Calculadora {
-    int somar(int a, int b) { a + b }
-    // método dinâmico desaparece em compilação estática
-    def methodMissing(String name, args) { /* não será chamado */ }
+  int somar(int a, int b) { a + b }
+  // método dinâmico desaparece em compilação estática
+  def methodMissing(String name, args) { /* não será chamado */ }
+
+  static void main(String[] args) {
+    def calc = new Calculadora()
+    println calc.somar(3, 4) // Imprime 7
+    println calc.methodMissing('foo', []) // Imprime null, não é chamado
+  }
 }
 ```
 
-Nesse caso, a tentativa de chamar um método inexistente resultará em erro de compilação, ao contrário do modo dinâmico onde o `methodMissing` poderia ser usado. (Fonte: Groovy Language Documentation – @CompileStatic)
+Nesse caso, a tentativa de chamar um método inexistente resultará em erro de compilação, ao contrário do modo dinâmico onde o `methodMissing` poderia ser usado.
 
 ---
 
 ### Closures
 
-**Explicação:** São blocos de código anônimos que podem ser atribuídos a variáveis, passados como parâmetros e executados posteriormente. Elas capturam o escopo onde foram criadas, permitindo acesso a variáveis externas (lexical scope). Em Groovy, closures são objetos da classe `groovy.lang.Closure` e suportam sintaxe curta, parâmetros implícitos (`it`) e delegação. (Fonte: Groovy Language Documentation – Closures)
+**Explicação:** São blocos de código anônimos que podem ser atribuídos a variáveis, passados como parâmetros e executados posteriormente. Elas capturam o escopo onde foram criadas, permitindo acesso a variáveis externas (lexical scope). Em Groovy, closures são objetos da classe `groovy.lang.Closure` e suportam sintaxe curta, parâmetros implícitos (`it`) e delegação.
 
 ```groovy
 // Atribuição a variável
@@ -406,16 +414,16 @@ def soma = 0
 numeros.each { soma += it }
 assert soma == 15
 
-// sortBy: ordena por propriedade
-def words = ['java', 'groovy', 'kotlin']
-assert words.sortBy { it.length() } == ['java', 'kotlin', 'groovy']
+// sort: ordena por propriedade
+def words = ['kotlin', 'java', 'groovy', 'scala']
+assert words.sort { it.length() } == ['java', 'scala', 'kotlin', 'groovy']
 ```
 
 ---
 
 ### Currying
 
-**Explicação:** *Currying* permite *pré‑definir* um ou mais parâmetros de uma closure, devolvendo uma nova closure que aceita menos argumentos. Isso facilita a criação de funções mais específicas a partir de funções genéricas. (Fonte: Groovy Language Documentation – Closures, seção *Currying*)
+**Explicação:** *Currying* permite *pré‑definir* um ou mais parâmetros de uma closure, devolvendo uma nova closure que aceita menos argumentos. Isso facilita a criação de funções mais específicas a partir de funções genéricas.
 
 ```groovy
 def multiply = { a, b -> a * b }
@@ -430,7 +438,7 @@ assert rcurryAdd(5) == 15
 
 ### Memoization
 
-**Explicação:** *Memoization* guarda o resultado de chamadas de uma closure em cache, evitando recomputação quando os mesmos argumentos são usados novamente – útil para funções custosas ou recursivas. (Fonte: Groovy Language Documentation – Closures, seção *Memoization*)
+**Explicação:** *Memoization* guarda o resultado de chamadas de uma closure em cache, evitando recomputação quando os mesmos argumentos são usados novamente – útil para funções custosas ou recursivas.
 
 ```groovy
 def slowCalc = { n -> 
@@ -443,21 +451,15 @@ assert slowCalc(5) == 10 // cached
 
 ---
 
-### Composition e Trampoline
+### Composition
 
-**Explicação:** *Composition* combina duas closures encadeando‑as (ex.: `addOne << doubleIt`) para produzir uma nova função. *Trampoline* permite chamadas recursivas sem risco de *StackOverflow* ao transformar a recursão em um loop de chamadas de closures. (Fonte: Groovy Language Documentation – Closures, seções *Composition* e *Trampoline*)
+**Explicação:** *Composition* combina duas closures encadeando‑as (ex.: `addOne << doubleIt`) para produzir uma nova função:
 
 ```groovy
 def addOne = { it + 1 }
 def doubleIt = { it * 2 }
 def composition = addOne << doubleIt
 assert composition(5) == 11
-
-def factorial(x, acc = 1) {
-    if (x <= 1) acc
-    else this.trampoline { factorial(x-1, x*acc) }
-}
-assert factorial.trampoline()(5) == 120
 ```
 
 ---
@@ -466,35 +468,32 @@ assert factorial.trampoline()(5) == 120
 
 **Metaprogramação** permite que o código Groovy altere ou estenda seu próprio comportamento em tempo de compilação (via **AST Transformations**) ou em tempo de execução (via **methodMissing**, **propertyMissing**, **ExpandoMetaClass**, etc.). Essa capacidade é a base para construir **DSLs (Domain Specific Languages)** – APIs fluentes e específicas de domínio que usam closures, delegação e transformações de AST para oferecer sintaxe quase natural. DSLs facilitam a expressão de regras de negócio, configurações ou scripts de forma legível, enquanto a metaprogramação cuida da geração de código boilerplate.
 
-*(Fonte: Groovy Language Documentation – Metaprogramação)*
-
 ### Métodos Mágicos: methodMissing
 
 ```groovy
 class DSLite {
-    def conteudo = []
-    def methodMissing(String name, args) {
-        conteudo << "$name(${args.collect { it.toString() }.join(', ')})"
-    }
+  def conteudo = []
+  def methodMissing(String name, args) {
+    conteudo << "$name(${args.collect { it.toString() }.join(', ')})"
+  }
 }
 def dsl = new DSLite()
 dsl.selecao('div', class: 'container')
 dsl.campo(type: 'text', id: 'nome')
-assert dsl.conteudo == [
-    'selecao(div, class: {class=container})',
-    'campo(type: text, id: nome)'
-]
+assert dsl.conteudo == ["selecao([class:container], div)", "campo([type:text, id:nome])"]
 ```
 
 ### AST Transformations
 
-**Explicação:** *AST Transformations* são anotações que modificam o código‑fonte durante a compilação, permitindo gerar automaticamente métodos como `toString`, `equals`, `hashCode`, ou tornar classes imutáveis. Elas reduzem boilerplate e melhoram a legibilidade. (Fonte: Groovy Language Documentation – AST Transformations)
+**Explicação:** *AST Transformations* são anotações que modificam o código‑fonte durante a compilação, permitindo gerar automaticamente métodos como `toString`, `equals`, `hashCode`, ou tornar classes imutáveis. Elas reduzem boilerplate e melhoram a legibilidade.
 
 ```groovy
+import groovy.transform.ToString
+
 @ToString(includeNames=true)
 class PessoaAST {
-    String nome
-    int idade
+  String nome
+  int idade
 }
 assert new PessoaAST(nome: 'Ana', idade: 30).toString() == 'PessoaAST(nome:Ana, idade:30)'
 ```
@@ -538,23 +537,30 @@ A combinação Groovy + Spock oferece os seguintes benefícios:
 ```groovy
 import spock.lang.Specification
 
-class CalculatorSpec extends Specification {
-    def "soma funciona corretamente"() {
-        given: "uma calculadora e dois numeros"
-        def calc = new Calculator()
-        def a = 5
-        def b = 3
-        
-        when: "realizo a soma"
-        def resultado = calc.somar(a, b)
-        
-        then: "o resultado eh a soma dos numeros"
-        resultado == 8
-        
-        expect: "alternativa mais concisa (sem blocos separate)"
-        calc.somar(a, b) == 8
-    }
+class Calculadora {
+  int somar(int a, int b) { a + b }
 }
+
+class CalculatoraSpec extends Specification {
+  def "soma deve funcionar corretamente"() {
+    given: "uma calculadora e dois numeros"
+    def calc = new Calculadora()
+    def a = 5
+    def b = 3
+
+    when: "realizo a soma"
+    def resultado = calc.somar(a, b)
+
+    then: "o resultado eh a soma dos numeros"
+    resultado == 8
+
+    expect: "alternativa mais concisa (sem blocos separate)"
+    calc.somar(a, b) == 8
+  }
+}
+
+def spec = new CalculatoraSpec()
+assert spec."soma deve funcionar corretamente"().booleanValue()
 ```
 
 **Blocos explicados:**
@@ -706,11 +712,10 @@ def "operacoes basicas da calculadora"() {
     calc.operar(a, b, op) == resultado
     
     where:
-    a  | b  | op   || resultado
-    10 | 5  | '+'  || 15
-    10 | 5   | '-'   | 5
-    10 | 5   | '*'   | 12
-    
+    a  | b  | op    || resultado
+    10 | 5  | '+'   || 15
+    10 | 5  | '-'   || 5
+    10 | 5  | '*'   || 12
     // ... mais linhas
 }
 ```
@@ -814,7 +819,7 @@ class Calculator {
         }
     }
     
-    boolean ehPar(int numero) { numero % 2 == 0 }
+    boolean isPar(int numero) { numero % 2 == 0 }
 }
 ```
 
@@ -832,11 +837,11 @@ class CalculatorSpec extends Specification {
         expect: "operacoes corretas"
         calculadora.calcular(a, b, op) == esperado
         where:
-        a | b | op | esperado
-        1 | 2 | '+' | 3
-        5 | 3 | '-' | 2
-        4 | 2 | '*' | 8
-        10| 2 | '/' | 5
+        a | b | op  || esperado
+        1 | 2 | '+' || 3
+        5 | 3 | '-' || 2
+        4 | 2 | '*' || 8
+        10| 2 | '/' || 5
     }
 }
 ```
