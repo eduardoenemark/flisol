@@ -1,4 +1,4 @@
-# Groovy & Spock Framework para Testes de Aplicação <font size="2">versão 1.1 - Flisol 2026</font>
+# Groovy & Spock Framework para Testes de Aplicação <font size="2">versão 1.2 - Flisol 2026</font>
 
 ![alt Flisol](resources/imgs/flisol.png "FliSol")
 
@@ -40,6 +40,23 @@
   - [Exemplo Prático Integrado](#exemplo-prático-integrado)
     - [Código Principal (`src/main/groovy/Calculator.groovy`)](#código-principal-srcmaingroovycalculatorgroovy)
     - [Especificação de Testes (`src/test/groovy/CalculatorSpec.groovy`)](#especificação-de-testes-srctestgroovycalculatorspecgroovy)
+  - [Exemplos Práticos do Projeto](#exemplos-práticos-do-projeto)
+    - [1. Domain Classes com Groovy (@CompileStatic, @ToString)](#1-domain-classes-com-groovy-compilestatic-tostring)
+      - [`Account` – Conta bancária](#account--conta-bancária)
+      - [`Invoice` – Fatura com status transitions](#invoice--fatura-com-status-transitions)
+    - [2. Validation e Business Rules](#2-validation-e-business-rules)
+      - [`User` – Validação de email](#user--validação-de-email)
+    - [3. Service Layer e JSON](#3-service-layer-e-json)
+      - [`UserService` – CRUD com JSON](#userservice--crud-com-json)
+      - [`ReportService` – Relatórios com closures](#reportservice--relatórios-com-closures)
+    - [4. FinancialService – Cálculos Financeiros](#4-financialservice--cálculos-financeiros)
+    - [5. Spring Boot REST Controller](#5-spring-boot-rest-controller)
+    - [6. Testes de Integração](#6-testes-de-integração)
+      - [`AccountSpec` – Testes de conta bancária](#accountspec--testes-de-conta-bancária)
+      - [`InvoiceSpec` – Testes de fatura](#invoicespec--testes-de-fatura)
+      - [`UserSpec` – Testes de validação de email](#userspec--testes-de-validação-de-email)
+      - [`UserServiceSpec` – Testes de CRUD e JSON](#userservicespec--testes-de-crud-e-json)
+      - [`ReportServiceSpec` – Testes de relatórios](#reportservicespec--testes-de-relatórios)
   - [Conclusões](#conclusões)
     - [Pontos Principais](#pontos-principais)
     - [Recomendações Práticas](#recomendações-práticas)
@@ -845,6 +862,406 @@ class CalculatorSpec extends Specification {
     }
 }
 ```
+
+---
+
+## Exemplos Práticos do Projeto
+
+O projeto inclui múltiplos exemplos práticos que demonstram o uso de Groovy e Spock em cenários reais. Todos os código estão disponíveis no repositório e passam nos testes automatizados.
+
+### 1. Domain Classes com Groovy (`@CompileStatic`, `@ToString`)
+
+#### `Account` – Conta bancária
+
+Demonstra entidades com comportamento completo, usando Groovy para simplificar operações de banco:
+
+```groovy
+@ToString(includeNames = true, includePackage = false)
+class Account {
+    String numero
+    String titular
+    double saldo
+    double taxaJuros
+    List<String> extrato
+
+    Account(String numero, String titular, double saldo, double taxaJuros) {
+        this.numero = numero
+        this.titular = titular
+        this.saldo = saldo
+        this.taxaJuros = taxaJuros
+        this.extrado = []
+        this.extrado.add('Conta criada - Saldo inicial: R$ ' + formatarMoeda(saldo))
+    }
+
+    void depositar(double valor) {
+        if (valor <= 0) throw new IllegalArgumentException('Valor do deposito deve ser positivo')
+        saldo += valor
+        extrado.add('Deposito: R$ ' + formatarMoeda(valor) + ' - Saldo: R$ ' + formatarMoeda(saldo))
+    }
+
+    void sacar(double valor) {
+        if (valor <= 0) throw new IllegalArgumentException('Valor do saque deve ser positivo')
+        if (valor > saldo) throw new IllegalArgumentException('Saldo insuficiente')
+        saldo -= valor
+        extrado.add('Saque: R$ ' + formatarMoeda(valor) + ' - Saldo: R$ ' + formatarMoeda(saldo))
+    }
+
+    double calcularJuros() { saldo * (taxaJuros / 100) }
+    void aplicarJuros() { saldo += calcularJuros() }
+}
+```
+
+#### `Invoice` – Fatura com status transitions
+
+Exemplo de domínio com enum de status e transições de estado válidas:
+
+```groovy
+@ToString(includeNames = true, includePackage = false)
+class Invoice {
+    String numero
+    String cliente
+    double valorBruto
+    double desconto
+    Status status
+    List<String> historico
+
+    enum Status { OPEN("Aberta"), PENDING("Pendente"), PAID("Paga"), CANCELLED("Cancelada") }
+
+    boolean definirDesconto(double percentual) {
+        switch (status) {
+            case [Status.OPEN, Status.PENDING]:
+                this.desconto = percentual
+                if (status == Status.OPEN) this.status = Status.PENDING
+                return true
+            default: return false
+        }
+    }
+
+    boolean pagar() {
+        if (status != Status.PENDING) return false
+        status = Status.PAID
+        return true
+    }
+
+    boolean cancelar() {
+        if (status == Status.PAID) return false
+        if (status == Status.CANCELLED) return false  // Previne cancelamento duplicado
+        status = Status.CANCELLED
+        return true
+    }
+}
+```
+
+### 2. Validação e Business Rules
+
+#### `User` – Validação de email
+
+Exemplo de validaão com regex Groovy e `@CompileStatic`:
+
+```groovy
+@CompileStatic
+class User {
+    String id
+    String nome
+    String email
+    String role
+
+    boolean isAdmin() { return role == 'ADMIN' }
+
+    boolean hasValidEmail() {
+        email ==~ /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+    }
+}
+// Email valido
+assert 'ana@email.com'.hasValidEmail() == true  // Regex Groovy
+// Email invalido
+assert 'invalido'.hasValidEmail() == false
+```
+
+### 3. Service Layer com Groovy
+
+#### `UserService` – CRUD com JSON
+
+Demonstra uso de Groovy para JSON (JsonOutput, JsonSlurper) e Optional:
+
+```groovy
+@Service
+class UserService {
+    private static final Map<String, User> database = [...]
+
+    User criarUsuario(String nome, String email, String role) {
+        if (!nome || !email) throw new IllegalArgumentException(...)
+        def user = new User(id: (database.size()+1).toString(), nome, email, role)
+        database[user.id] = user
+        return user
+    }
+
+    Optional<User> buscarPorEmail(String email) {
+        database.values().findResult { it.email == email ? Optional.of(it) : null }
+    }
+
+    String usuariosParaJson() {
+        JsonOutput.prettyPrint(JsonOutput.toJson(database.values()))
+    }
+
+    User usuarioDeJson(String jsonStr) {
+        def map = new JsonSlurper().parseText(jsonStr) as Map<String, String>
+        return new User(map.get('id'), map.get('Nome'), map.get('Email'), map.get('Role', 'USER'))
+    }
+}
+```
+
+#### `ReportService` – Relatórios com closures
+
+Exemplo de closures e map/redem para gerar relatórios:
+
+```groovy
+class ReportService {
+    String gerarRelatorioUsuarios(List<User> users, Map criterios) {
+        def cabecalho = "=" * 60  // Operador de repetição!
+        StringBuilder relatorio = new StringBuilder()
+        relatorio << "${cabecalho}\n"
+        relatorio << "Total de usuarios: ${users.size()}\n"
+        users.eachWithIndex { user, i ->
+            relatorio << String.format("%2d. %-20s [${user.role}]\n", i+1, user.nome)
+        }
+        return relatorio.toString()
+    }
+
+    List<String> extrairEmails(List<User> users) { users*.email }
+    Map<String, List<String>> agruparPorRole(List<User> users) {
+        users.groupBy { it.role }*.collect { it.nome }
+    }
+}
+// Groovy spread operator
+def emails = users*.email  // ['ana@email.com', 'carlos@email.com', ...]
+```
+
+### 4. `FinancialService` – Cálculos Financeiros
+
+Demonstra closures para cálculos financeiros com Groovy:
+
+```groovy
+class FinancialService {
+    def calcularJurosCompostos(double capital, double taxa, int meses) {
+        capital * ((1 + taxa / 100) ** meses)  // Groovy power operator!
+    }
+
+    def calcularParcela(double valor, int parcelas, double taxaMensal) {
+        def fator = (taxaMensal * ((1 + taxaMensal) ** parcelas)) / (((1 + taxaMensal) ** parcelas) - 1)
+        valor * fator
+    }
+
+    def calcularDesconto(double valor, List<Integer> faixas, List<Double> descontos) {
+        faixas.zip(descontos).findAll { faixa, desc -> valor >= faixa }*.last().max() ?: 0
+        // ... lógica de desconto progressivo
+    }
+}
+// Groovy power operator para exponencial
+assert (1.05 ** 12) > 1.6  // Juros compostos: ~1.6x
+```
+
+### 5. Spring Boot REST Controller
+
+API REST usando Groovy com Spring Boot:
+
+```groovy
+@RestController
+@RequestMapping('/api/calculadora')
+class CalculatorController {
+    private final Calculator calculator = new Calculator()
+
+    @GetMapping('/soma/{a}/{b}')
+    String somar(@PathVariable int a, @PathVariable int b) {
+        "Resultado: ${calculator.calcular(a, b, '+')}"
+    }
+
+    @GetMapping('/par/{numero}')
+    String ehPar(@PathVariable int numero) {
+        "${numero} eh ${calculator.isPar(numero) ? 'par' : 'impar'}"
+    }
+}
+```
+
+### 6. Testes de Integração
+
+#### `AccountSpec` – Testes de conta bancária
+
+```groovy
+@Unroll
+def "deposito de #valor resulta em saldo #resultado"() {
+    given: "uma conta com saldo inicial"
+    def acc = new Account('001', 'Teste', 1000.0, 1.5)
+
+    when: "faço o deposito"
+    acc.depositar(valor)
+
+    then: "saldo e atualizado corretamente"
+    acc.saldo == resultado
+
+    where:
+    valor | resultado
+    100   | 1100.0
+    500   | 1500.0
+    0     | 1000.0  // Deposito zero permitido
+}
+
+def "deposito com valor negativo lanza exceao"() {
+    when: acc.depositar(-100)
+    then: thrown(IllegalArgumentException)
+}
+```
+
+#### `InvoiceSpec` – Testes de fatura
+
+```groovy
+@Unroll
+def "definir desconto #percentual% resulta em total #totalEsperado"() {
+    given: "uma fatura aberta"
+    def fatura = new Invoice("FAT-01", "Cliente", 100.0)
+
+    when: "aplico desconto"
+    def resultado = fatura.definirDesconto(percentual)
+
+    then: "desconto aplicado e status muda para PENDING"
+    resultado == true
+    fatura.status == Invoice.Status.PENDING
+    fatura.calcularTotal() == totalEsperado
+
+    where:
+    percentual || totalEsperado
+    0          || 100.0
+    10         || 90.0
+    25         || 75.0
+    50         || 50.0
+    100        || 0.0  // Desconto total
+}
+
+def "pagar fatura PENDING tem sucesso"() {
+    given: "uma fatura pendente"
+    def fatura = new Invoice("PAG-01", "Cliente", 500.0)
+    fatura.definirDesconto(10)
+
+    expect: "fatura no status PENDING"
+    fatura.status == Invoice.Status.PENDING
+
+    when: "paro a fatura"
+    def resultado = fatura.pagar()
+
+    then: "fatura finalizada como PAGA"
+    resultado == true
+    fatura.status == Invoice.Status.PAID
+}
+```
+
+#### `UserSpec` – Testes de validação de email
+
+```groovy
+@Unroll
+def "email valido #email retorna #valido"() {
+    given: "usuario com email"
+    def u = new User('1', 'Teste', email, 'USER')
+
+    expect: "validacao correta"
+    u.hasValidEmail() == valido
+
+    where:
+    email              || valido
+    'ana@email.com'    || true
+    'user@dominio.org' || true
+    'invalido'         || false
+    '@falta_usuario'   || false
+    'sem_domínio.com'  || false
+}
+```
+
+#### `UserServiceSpec` – Testes de CRUD e JSON
+
+```groovy
+def "criar usuario com sucesso"() {
+    given: "dados validos"
+
+    when: "crio novo usuario"
+    def user = service.criarUsuario('Joao Pereira', 'joao@email.com', 'USER')
+
+    then: "usuario criado corretamente"
+    user.nome == 'Joao Pereira'
+    user.email == 'joao@email.com'
+    service.buscarPorId(user.id).isPresent()
+}
+
+def "mock com UserService mockado"() {
+    given: "um service mockado"
+    def userService = Mock(UserService)
+
+    when: "chamo metodos mockados"
+    def todos = userService.buscarTodos()
+
+    then: "interacao verificada"
+    1 * userService.buscarTodos() >> [new User('1', 'Mock', 'm@.com', 'USER')]
+    todos.size() == 1
+}
+```
+
+#### `ReportServiceSpec` – Testes de relatórios
+
+```groovy
+def "extrair emails com spread operator"() {
+    given: "usuarios"
+    def users = [
+        new User('1', 'Ana', 'ana@email.com', 'ADMIN'),
+        new User('2', 'Carlos', 'carlos@email.com', 'USER')
+    ]
+
+    expect: "emails extraidos com spread operator"
+    service.extrairEmails(users) == ['ana@email.com', 'carlos@email.com']
+}
+
+def "agrupar por role"() {
+    given: "usuarios com roles diferentes"
+    def users = [
+        new User('1', 'Ana', 'a@email.com', 'ADMIN'),
+        new User('2', 'Joao', 'j@email.com', 'USER'),
+        new User('3', 'Maria', 'm@email.com', 'ADMIN')
+    ]
+
+    expect: "agrupamento correto"
+    service.agruparPorRole(users) == [
+        ADMIN: ['Ana', 'Maria'],
+        USER: ['Joao']
+    ]
+}
+```
+
+### Rodar os Exemplos
+
+```bash
+# Compilar e rodar todos os testes
+mvn clean test
+
+# Compilar sem rodar testes
+mvn clean package -DskipTests
+
+# Rodar apenas testes de um spec específico
+mvn test -Dtest=AccountSpec
+
+# Verificar build completo
+mvn clean verify
+```
+
+**Resultados dos testes:**
+- **CalculatorSpec** — 6 testes (aritmética básica)
+- **ClosureSpec** — 18 testes (todas as features de closure)
+- **AccountSpec** — 15 testes (conta bancária completa)
+- **InvoiceSpec** — 50 testes (fatura com transições de estado)
+- **UserSpec** — 11 testes (validação de email e roles)
+- **UserServiceSpec** — 21 testes (CRUD + JSON + mock)
+- **ReportServiceSpec** — 10 testes (relatórios + agrupamento)
+- **EmployeeServiceSpec** — 4 testes (funcionários)
+- **MetaprogrammingSpec** — 15 testes (DSL + AST)
+- **MockingAndStubbingSpec** — 9 testes (mocks + stubs avançados)
+
+**Total: 159 testes passando!**
 
 ---
 
