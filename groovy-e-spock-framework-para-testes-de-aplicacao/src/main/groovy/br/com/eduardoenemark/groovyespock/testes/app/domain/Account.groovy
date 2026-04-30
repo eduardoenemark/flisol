@@ -4,6 +4,7 @@ import groovy.transform.ToString
 
 @ToString(includeNames = true, includePackage = false)
 class Account {
+
     String numero
     String titular
     double saldo

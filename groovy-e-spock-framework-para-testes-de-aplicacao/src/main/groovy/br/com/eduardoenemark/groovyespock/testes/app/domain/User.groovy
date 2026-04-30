@@ -2,9 +2,11 @@ package br.com.eduardoenemark.groovyespock.testes.app.domain
 
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
+
 @ToString(includeNames = true, includePackage = false)
 @CompileStatic
 class User {
+
     String id
     String nome
     String email

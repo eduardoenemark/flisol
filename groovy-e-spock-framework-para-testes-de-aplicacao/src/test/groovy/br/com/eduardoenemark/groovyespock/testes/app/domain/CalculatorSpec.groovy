@@ -1,12 +1,13 @@
 package br.com.eduardoenemark.groovyespock.testes.app.domain
 
-import spock.lang.Specification
 import spock.lang.Shared
+import spock.lang.Specification
 import spock.lang.Unroll
 
 class CalculatorSpec extends Specification {
 
-    @Shared calc = new Calculator()
+    @Shared
+    def calc = new Calculator()
 
     def setupSpec() {
         println "=== setupSpec: Executado uma vez antes de todos os tests ==="
@@ -47,11 +48,11 @@ class CalculatorSpec extends Specification {
         calc.calcular(a, b, op) == esperado
 
         where:
-        a | b | op | esperado
-        1 | 2 | '+' | 3
-        5 | 3 | '-' | 2
-        4 | 2 | '*' | 8
-        10| 2 | '/' | 5
+        a  | b | op  | esperado
+        1  | 2 | '+' | 3
+        5  | 3 | '-' | 2
+        4  | 2 | '*' | 8
+        10 | 2 | '/' | 5
     }
 
     def "divisao por zero lanza excecao"() {
@@ -91,9 +92,9 @@ class CalculatorSpec extends Specification {
         calc.calcular(a, b, '+') == a + b
 
         where:
-        a | b
-        1 | 1
+        a   | b
+        1   | 1
         100 | 200
-        -5 | 5
+        -5  | 5
     }
 }

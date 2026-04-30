@@ -5,7 +5,9 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 class ReportServiceSpec extends Specification {
-    @Shared service = new ReportService()
+
+    @Shared
+    def service = new ReportService()
 
     def setupSpec() {
         println "=== setupSpec: ReportServiceSpec ==="
@@ -26,9 +28,9 @@ class ReportServiceSpec extends Specification {
     def "gerar relatario sem criterios retorna relatorio completo"() {
         given: "lista de usuarios"
         def usuarios = [
-            new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN'),
-            new User('2', 'Carlos Santos', 'carlos@email.com', 'USER'),
-            new User('3', 'Maria Oliveira', 'maria@email.com', 'USER')
+                new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN'),
+                new User('2', 'Carlos Santos', 'carlos@email.com', 'USER'),
+                new User('3', 'Maria Oliveira', 'maria@email.com', 'USER')
         ]
 
         when: "gero relatorio sem criterios"
@@ -48,8 +50,8 @@ class ReportServiceSpec extends Specification {
     def "gerar relatorio com criterios filtrados"() {
         given: "usuarios e criterios"
         def usuarios = [
-            new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN'),
-            new User('2', 'Carlos Santos', 'carlos@email.com', 'USER')
+                new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN'),
+                new User('2', 'Carlos Santos', 'carlos@email.com', 'USER')
         ]
         def criterios = ['teste': 0]
 
@@ -64,9 +66,9 @@ class ReportServiceSpec extends Specification {
     def "extrair emails retorna lista de emails"() {
         given: "usuarios"
         def usuarios = [
-            new User('1', 'Ana', 'ana@email.com', 'ADMIN'),
-            new User('2', 'Carlos', 'carlos@email.com', 'USER'),
-            new User('3', 'Maria', 'maria@email.com', 'USER')
+                new User('1', 'Ana', 'ana@email.com', 'ADMIN'),
+                new User('2', 'Carlos', 'carlos@email.com', 'USER'),
+                new User('3', 'Maria', 'maria@email.com', 'USER')
         ]
 
         when: "extrai emails"
@@ -85,9 +87,9 @@ class ReportServiceSpec extends Specification {
     def "agrupar por role retorna grupos corretos"() {
         given: "usuarios com diferentes roles"
         def usuarios = [
-            new User('1', 'Ana', 'ana@email.com', 'ADMIN'),
-            new User('2', 'Carlos', 'carlos@email.com', 'USER'),
-            new User('3', 'Maria', 'maria@email.com', 'ADMIN')
+                new User('1', 'Ana', 'ana@email.com', 'ADMIN'),
+                new User('2', 'Carlos', 'carlos@email.com', 'USER'),
+                new User('3', 'Maria', 'maria@email.com', 'ADMIN')
         ]
 
         when: "agrupo por role"
@@ -104,7 +106,7 @@ class ReportServiceSpec extends Specification {
     def "agrupar por role com usuarios sem role"() {
         given: "usuarios"
         def usuarios = [
-            new User('1', 'Ana', 'ana@email.com', 'MODERATOR')
+                new User('1', 'Ana', 'ana@email.com', 'MODERATOR')
         ]
 
         when: "agrupo por role"
@@ -118,9 +120,9 @@ class ReportServiceSpec extends Specification {
     def "relatorio formata numeracao corretamente"() {
         given: "usuarios numerados"
         def usuarios = [
-            new User('1', 'Usuario1', 'u1@email.com', 'USER'),
-            new User('2', 'Usuario2', 'u2@email.com', 'USER'),
-            new User('3', 'Usuario3', 'u3@email.com', 'USER')
+                new User('1', 'Usuario1', 'u1@email.com', 'USER'),
+                new User('2', 'Usuario2', 'u2@email.com', 'USER'),
+                new User('3', 'Usuario3', 'u3@email.com', 'USER')
         ]
 
         when: "gero relatorio"
@@ -135,7 +137,7 @@ class ReportServiceSpec extends Specification {
     def "relatorio com 1 usuario"() {
         given: "apenas um usuario"
         def usuarios = [
-            new User('1', 'SoUm', 'so@email.com', 'ADMIN')
+                new User('1', 'SoUm', 'so@email.com', 'ADMIN')
         ]
 
         when: "gero relatorio"

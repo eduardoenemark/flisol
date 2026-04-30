@@ -5,7 +5,9 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 class UserSpec extends Specification {
-    @Shared user = new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN')
+
+    @Shared
+    def user = new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN')
 
     def setupSpec() {
         println "=== setupSpec: UserSpec ==="
@@ -55,17 +57,17 @@ class UserSpec extends Specification {
         usuario.hasValidEmail() == valido
 
         where:
-        email              || valido
-        'ana@email.com'    || true
+        email                  || valido
+        'ana@email.com'        || true
         'joao.123@dominio.org' || true
         'maria@empresa.co.br'  || true
-        'emailinvalido'    || false
-        '@missing.com'     || false
-        'user@'            || false
-        ''                 || false
-        'sem arroba'       || false
-        'user@@duplo.com'  || false
-        'user@.com'        || false
+        'emailinvalido'        || false
+        '@missing.com'         || false
+        'user@'                || false
+        ''                     || false
+        'sem arroba'           || false
+        'user@@duplo.com'      || false
+        'user@.com'            || false
     }
 
     def "toString gera representacao formatada"() {

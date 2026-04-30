@@ -5,7 +5,8 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 class UserServiceSpec extends Specification {
-    @Shared service = new UserService()
+    @Shared
+            service = new UserService()
 
     def setupSpec() {
         println "=== setupSpec: UserServiceSpec ==="
@@ -216,8 +217,8 @@ class UserServiceSpec extends Specification {
         given: "um service stubbed"
         def userService = Stub(UserService) {
             buscarTodos() >> [
-                new User('1', 'Stub1', 's1@email.com', 'USER'),
-                new User('2', 'Stub2', 's2@email.com', 'ADMIN')
+                    new User('1', 'Stub1', 's1@email.com', 'USER'),
+                    new User('2', 'Stub2', 's2@email.com', 'ADMIN')
             ]
             buscarAdmins() >> [new User('2', 'Stub2', 's2@email.com', 'ADMIN')]
         }

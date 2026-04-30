@@ -732,7 +732,7 @@ def "operacoes basicas da calculadora"() {
     a  | b  | op    || resultado
     10 | 5  | '+'   || 15
     10 | 5  | '-'   || 5
-    10 | 5  | '*'   || 12
+10 | 5  | '*'  || 50
     // ... mais linhas
 }
 ```
@@ -889,21 +889,21 @@ class Account {
         this.titular = titular
         this.saldo = saldo
         this.taxaJuros = taxaJuros
-        this.extrado = []
-        this.extrado.add('Conta criada - Saldo inicial: R$ ' + formatarMoeda(saldo))
+        this.extrato = []
+        this.extrato.add('Conta criada - Saldo inicial: R$ ' + formatarMoeda(saldo))
     }
 
     void depositar(double valor) {
         if (valor <= 0) throw new IllegalArgumentException('Valor do deposito deve ser positivo')
         saldo += valor
-        extrado.add('Deposito: R$ ' + formatarMoeda(valor) + ' - Saldo: R$ ' + formatarMoeda(saldo))
+        extrato.add('Deposito: R$ ' + formatarMoeda(valor) + ' - Saldo: R$ ' + formatarMoeda(saldo))
     }
 
     void sacar(double valor) {
         if (valor <= 0) throw new IllegalArgumentException('Valor do saque deve ser positivo')
         if (valor > saldo) throw new IllegalArgumentException('Saldo insuficiente')
         saldo -= valor
-        extrado.add('Saque: R$ ' + formatarMoeda(valor) + ' - Saldo: R$ ' + formatarMoeda(saldo))
+        extrato.add('Saque: R$ ' + formatarMoeda(valor) + ' - Saldo: R$ ' + formatarMoeda(saldo))
     }
 
     double calcularJuros() { saldo * (taxaJuros / 100) }
@@ -928,13 +928,36 @@ class Invoice {
     enum Status { OPEN("Aberta"), PENDING("Pendente"), PAID("Paga"), CANCELLED("Cancelada") }
 
     boolean definirDesconto(double percentual) {
-        switch (status) {
-            case [Status.OPEN, Status.PENDING]:
-                this.desconto = percentual
-                if (status == Status.OPEN) this.status = Status.PENDING
-                return true
-            default: return false
+        if (percentual < 0 || percentual > 100) {
+            throw new IllegalArgumentException('Percentual de desconto deve estar entre 0 e 100')
         }
+        boolean statusPermitido
+        switch (status) {
+            case Status.OPEN:
+            case Status.PENDING:
+                statusPermitido = true
+                break
+            default:
+                historico.add('Rejeicao de desconto - Fatura ' + status.descricao)
+                return false
+        }
+
+        this.desconto = percentual
+        switch (status) {
+            case Status.OPEN:
+                status = Status.PENDING
+                break
+        }
+        historico.add('Desconto de ' + percentual + '% definido - Valor liquido: R$ ' + formatarMoeda(calcularTotal()))
+        return true
+    }
+
+    double calcularDesconto() {
+        return valorBruto * (desconto / 100)
+    }
+
+    double calcularTotal() {
+        return valorBruto - calcularDesconto()
     }
 
     boolean pagar() {
@@ -960,22 +983,34 @@ Exemplo de validaão com regex Groovy e `@CompileStatic`:
 
 ```groovy
 @CompileStatic
+@ToString(includeNames = true, includePackage = false)
 class User {
     String id
     String nome
     String email
     String role
 
-    boolean isAdmin() { return role == 'ADMIN' }
+    User(String id, String nome, String email, String role) {
+        this.id = id
+        this.nome = nome
+        this.email = email
+        this.role = role
+    }
+
+    boolean isAdmin() {
+        return role == 'ADMIN'
+    }
 
     boolean hasValidEmail() {
-        email ==~ /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+        return email ==~ /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
     }
 }
-// Email valido
-assert 'ana@email.com'.hasValidEmail() == true  // Regex Groovy
-// Email invalido
-assert 'invalido'.hasValidEmail() == false
+// Email válido
+def user = new User('1', 'Ana', 'ana@email.com', 'USER')
+assert user.hasValidEmail() == true  // Regex Groovy funciona com @CompileStatic no Groovy 4.x
+// Email inválido
+def userInvalido = new User('2', 'Teste', 'invalido', 'USER')
+assert userInvalido.hasValidEmail() == false
 ```
 
 ### 3. Service Layer com Groovy
@@ -987,50 +1022,102 @@ Demonstra uso de Groovy para JSON (JsonOutput, JsonSlurper) e Optional:
 ```groovy
 @Service
 class UserService {
-    private static final Map<String, User> database = [...]
+    private static final Map<String, User> usersDatabase = [
+        '1': new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN'),
+        '2': new User('2', 'Carlos Santos', 'carlos@email.com', 'USER'),
+        '3': new User('3', 'Maria Oliveira', 'maria@email.com', 'USER')
+    ]
 
     User criarUsuario(String nome, String email, String role) {
-        if (!nome || !email) throw new IllegalArgumentException(...)
-        def user = new User(id: (database.size()+1).toString(), nome, email, role)
-        database[user.id] = user
-        return user
+        if (!nome || !nome.trim()) {
+            throw new IllegalArgumentException('Nome é obrigatório')
+        }
+        if (!email || !email.trim()) {
+            throw new IllegalArgumentException('Email é obrigatório')
+        }
+
+        def usuario = new User(
+            (usersDatabase.size() + 1).toString(),
+            nome,
+            email,
+            role
+        )
+        usersDatabase[usuario.id] = usuario
+        return usuario
+    }
+
+    Optional<User> buscarPorId(String id) {
+        return Optional.ofNullable(usersDatabase[id])
     }
 
     Optional<User> buscarPorEmail(String email) {
-        database.values().findResult { it.email == email ? Optional.of(it) : null }
+        def user = usersDatabase.values().findResult { it.email == email ? it : null }
+        return Optional.ofNullable(user)
+    }
+
+    List<User> buscarTodos() {
+        return usersDatabase.values() as List<User>
     }
 
     String usuariosParaJson() {
-        JsonOutput.prettyPrint(JsonOutput.toJson(database.values()))
+        JsonOutput.prettyPrint(JsonOutput.toJson(usersDatabase.values()))
     }
 
     User usuarioDeJson(String jsonStr) {
         def map = new JsonSlurper().parseText(jsonStr) as Map<String, String>
-        return new User(map.get('id'), map.get('Nome'), map.get('Email'), map.get('Role', 'USER'))
+        return new User(
+            map.get('id', (usersDatabase.size() + 1).toString()),
+            map.get('Nome'),
+            map.get('Email'),
+            map.get('Role', 'USER')
+        )
     }
 }
 ```
 
 #### `ReportService` – Relatórios com closures
 
-Exemplo de closures e map/redem para gerar relatórios:
+Exemplo de closures e map/collect para gerar relatórios:
 
 ```groovy
+@Service
 class ReportService {
-    String gerarRelatorioUsuarios(List<User> users, Map criterios) {
-        def cabecalho = "=" * 60  // Operador de repetição!
+    String gerarRelatorioUsuarios(List<User> usuarios, Map<String, Integer> criterios) {
+        def cabecalho = "=" * 60
+        def cabecalho2 = "-" * 60
+
         StringBuilder relatorio = new StringBuilder()
-        relatorio << "${cabecalho}\n"
-        relatorio << "Total de usuarios: ${users.size()}\n"
-        users.eachWithIndex { user, i ->
-            relatorio << String.format("%2d. %-20s [${user.role}]\n", i+1, user.nome)
+        relatorio << "\n${cabecalho}\n"
+        relatorio << "RELATÓRIO DE USUÁRIOS\n"
+        relatorio << "Total de usuários: ${usuarios.size()}\n"
+
+        if (criterios) {
+            relatorio << "Critérios: ${criterios.collect { k, v -> "${k} > $v" }.join(', ')}\n"
+            def filtrados = usuarios.findAll { usuario ->
+                criterios.every { key, minValor ->
+                    getValorPropriedade(usuario, key) > minValor
+                }
+            }
+            relatorio << "Usuários filtrados: ${filtrados.size()}\n"
         }
+
+        relatorio << "${cabecalho2}\n"
+
+        usuarios.eachWithIndex { usuario, indice ->
+            relatorio << String.format("%2d. %-20s %-30s [${usuario.role}]\n",
+                indice + 1, usuario.nome, usuario.email)
+        }
+
+        relatorio << "${cabecalho}\n"
         return relatorio.toString()
     }
 
-    List<String> extrairEmails(List<User> users) { users*.email }
-    Map<String, List<String>> agruparPorRole(List<User> users) {
-        users.groupBy { it.role }*.collect { it.nome }
+    List<String> extrairEmails(List<User> usuarios) {
+        return usuarios*.email
+    }
+
+    Map<String, List<String>> agruparPorRole(List<User> usuarios) {
+        return usuarios.groupBy { it.role }.collectEntries { k, v -> [(k): v*.nome] }
     }
 }
 // Groovy spread operator
@@ -1043,18 +1130,31 @@ Demonstra closures para cálculos financeiros com Groovy:
 
 ```groovy
 class FinancialService {
-    def calcularJurosCompostos(double capital, double taxa, int meses) {
-        capital * ((1 + taxa / 100) ** meses)  // Groovy power operator!
+    def calcularJuros(double capital, double taxaJuros, int meses) {
+        capital * ((1 + taxaJuros / 100) ** meses)  // Groovy power operator!
     }
 
     def calcularParcela(double valor, int parcelas, double taxaMensal) {
+        if (parcelas <= 0) throw new IllegalArgumentException('Parcelas devem ser positivas')
+        if (valor <= 0) throw new IllegalArgumentException('Valor deve ser positivo')
+
         def fator = (taxaMensal * ((1 + taxaMensal) ** parcelas)) / (((1 + taxaMensal) ** parcelas) - 1)
-        valor * fator
+        return valor * fator
     }
 
     def calcularDesconto(double valor, List<Integer> faixas, List<Double> descontos) {
-        faixas.zip(descontos).findAll { faixa, desc -> valor >= faixa }*.last().max() ?: 0
-        // ... lógica de desconto progressivo
+        if (!faixas || !descontos || faixas.size() != descontos.size()) {
+            throw new IllegalArgumentException('Faixas e descontos devem ter mesmo tamanho')
+        }
+
+        def melhorDesconto = 0 as BigDecimal
+        for (int i = 0; i < faixas.size(); i++) {
+            if (valor >= faixas[i]) {
+                melhorDesconto = descontos[i] as BigDecimal
+            }
+        }
+
+        return valor - (valor * melhorDesconto / 100)
     }
 }
 // Groovy power operator para exponencial
@@ -1088,148 +1188,260 @@ class CalculatorController {
 #### `AccountSpec` – Testes de conta bancária
 
 ```groovy
-@Unroll
-def "deposito de #valor resulta em saldo #resultado"() {
-    given: "uma conta com saldo inicial"
-    def acc = new Account('001', 'Teste', 1000.0, 1.5)
+import spock.lang.Specification
+import spock.lang.Unroll
+import spock.lang.Shared
 
-    when: "faço o deposito"
-    acc.depositar(valor)
+class AccountSpec extends Specification {
+    @Shared def acc = new Account('001', 'Joao Silva', 1000.0, 1.5)
 
-    then: "saldo e atualizado corretamente"
-    acc.saldo == resultado
+    @Unroll
+    def "deposicao de #valor resulta em saldo #resultado"() {
+        given: "uma conta com saldo inicial"
 
-    where:
-    valor | resultado
-    100   | 1100.0
-    500   | 1500.0
-    0     | 1000.0  // Deposito zero permitido
-}
+        when: "faço o deposito"
+        acc.depositar(valor)
 
-def "deposito com valor negativo lanza exceao"() {
-    when: acc.depositar(-100)
-    then: thrown(IllegalArgumentException)
+        then: "saldo e atualizado"
+        acc.saldo == resultado
+
+        where:
+        valor | resultado
+        100   | 1100.0
+        500   | 1500.0
+        1000  | 2000.0
+        0.01  | 1000.01
+    }
+
+    def "deposito com valor negativo lanza excecao"() {
+        when: "tento depositar valor negativo"
+        acc.depositar(-100.0)
+
+        then: "excecao e lancada"
+        thrown(IllegalArgumentException)
+    }
+
+    def "deposito com valor zero lana excecao"() {
+        when: "tento depositar valor zero"
+        acc.depositar(0.0)
+
+        then: "excecao e lancada"
+        thrown(IllegalArgumentException)
+    }
 }
 ```
 
 #### `InvoiceSpec` – Testes de fatura
 
 ```groovy
-@Unroll
-def "definir desconto #percentual% resulta em total #totalEsperado"() {
-    given: "uma fatura aberta"
-    def fatura = new Invoice("FAT-01", "Cliente", 100.0)
+import spock.lang.Specification
+import spock.lang.Unroll
+import spock.lang.Shared
 
-    when: "aplico desconto"
-    def resultado = fatura.definirDesconto(percentual)
+class InvoiceSpec extends Specification {
+    @Shared List<Invoice> faturasCriadas = []
 
-    then: "desconto aplicado e status muda para PENDING"
-    resultado == true
-    fatura.status == Invoice.Status.PENDING
-    fatura.calcularTotal() == totalEsperado
+    @Unroll
+    def "definir desconto #percentual percentual resulta em total #totalEsperado"() {
+        given: "uma fatura com valor bruto fixo"
+        def fatura = new Invoice("DESC-01", "Loja X", 100.0)
 
-    where:
-    percentual || totalEsperado
-    0          || 100.0
-    10         || 90.0
-    25         || 75.0
-    50         || 50.0
-    100        || 0.0  // Desconto total
-}
+        expect: "validacao inicial"
+        fatura.status == Invoice.Status.OPEN
+        fatura.desconto == 0.0
 
-def "pagar fatura PENDING tem sucesso"() {
-    given: "uma fatura pendente"
-    def fatura = new Invoice("PAG-01", "Cliente", 500.0)
-    fatura.definirDesconto(10)
+        when: "defino o desconto"
+        def resultado = fatura.definirDesconto(percentual)
 
-    expect: "fatura no status PENDING"
-    fatura.status == Invoice.Status.PENDING
+        then: "desconto e aplicado corretamente"
+        resultado == true
+        fatura.desconto == percentual
+        fatura.calcularTotal() == totalEsperado
+        fatura.status == Invoice.Status.PENDING
 
-    when: "paro a fatura"
-    def resultado = fatura.pagar()
+        where:
+        percentual || totalEsperado
+        0          || 100.0
+        10         || 90.0
+        25         || 75.0
+        50         || 50.0
+        100        || 0.0
+    }
 
-    then: "fatura finalizada como PAGA"
-    resultado == true
-    fatura.status == Invoice.Status.PAID
+    def "pagar fatura com status PENDING tem sucesso"() {
+        given: "uma fatura pendente com desconto"
+        def fatura = new Invoice("PAG-01", "Pagador", 500.0)
+        fatura.definirDesconto(10)
+
+        expect: "fatura no status PENDING"
+        fatura.status == Invoice.Status.PENDING
+
+        when: "paro a fatura"
+        def resultado = fatura.pagar()
+
+        then: "pagamento com sucesso"
+        resultado == true
+        fatura.status == Invoice.Status.PAID
+        fatura.historico.size() == 3
+    }
 }
 ```
 
 #### `UserSpec` – Testes de validação de email
 
 ```groovy
-@Unroll
-def "email valido #email retorna #valido"() {
-    given: "usuario com email"
-    def u = new User('1', 'Teste', email, 'USER')
+import spock.lang.Specification
+import spock.lang.Shared
+import spock.lang.Unroll
 
-    expect: "validacao correta"
-    u.hasValidEmail() == valido
+class UserSpec extends Specification {
+    @Shared user = new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN')
 
-    where:
-    email              || valido
-    'ana@email.com'    || true
-    'user@dominio.org' || true
-    'invalido'         || false
-    '@falta_usuario'   || false
-    'sem_domínio.com'  || false
+    @Unroll
+    def "email valido #email retorna #valido"() {
+        given: "usuario com email"
+        def usuario = new User('1', 'Teste', email, 'USER')
+
+        expect: "validacao de email"
+        usuario.hasValidEmail() == valido
+
+        where:
+        email              || valido
+        'ana@email.com'    || true
+        'joao.123@dominio.org' || true
+        'maria@empresa.co.br'  || true
+        'emailinvalido'    || false
+        '@missing.com'     || false
+        'user@'            || false
+        ''                 || false
+        'sem arroba'       || false
+        'user@@duplo.com'  || false
+        'user@.com'        || false
+    }
 }
 ```
 
 #### `UserServiceSpec` – Testes de CRUD e JSON
 
 ```groovy
-def "criar usuario com sucesso"() {
-    given: "dados validos"
+import spock.lang.Specification
+import spock.lang.Shared
 
-    when: "crio novo usuario"
-    def user = service.criarUsuario('Joao Pereira', 'joao@email.com', 'USER')
+class UserServiceSpec extends Specification {
+    @Shared service = new UserService()
 
-    then: "usuario criado corretamente"
-    user.nome == 'Joao Pereira'
-    user.email == 'joao@email.com'
-    service.buscarPorId(user.id).isPresent()
-}
+    def "buscar todos usuarios retorna lista com 3 usuarios"() {
+        expect: "busca retorna todos usuarios"
+        service.buscarTodos().size() == 3
+    }
 
-def "mock com UserService mockado"() {
-    given: "um service mockado"
-    def userService = Mock(UserService)
+    def "criar usuario com sucesso"() {
+        given: "dados validos"
 
-    when: "chamo metodos mockados"
-    def todos = userService.buscarTodos()
+        when: "crio novo usuario"
+        def usuario = service.criarUsuario('Joao Pereira', 'joao@email.com', 'USER')
 
-    then: "interacao verificada"
-    1 * userService.buscarTodos() >> [new User('1', 'Mock', 'm@.com', 'USER')]
-    todos.size() == 1
+        then: "usuario criado corretamente"
+        usuario != null
+        usuario.nome == 'Joao Pereira'
+        usuario.email == 'joao@email.com'
+        usuario.role == 'USER'
+
+        and: "usuario esta no banco"
+        service.buscarPorId(usuario.id).isPresent()
+    }
+
+    def "buscar por email valida"() {
+        expect: "encontra usuario por email"
+        service.buscarPorEmail('ana@email.com').orElse(null).nome == 'Ana Silva'
+    }
+
+    def "criar usuario com nome vazio lança excecao"() {
+        when: "tento criar usuario sem nome"
+        service.criarUsuario('', 'user@email.com', 'USER')
+
+        then: "excecao e lancada"
+        thrown(IllegalArgumentException)
+    }
+
+    def "mock com UserService mockado"() {
+        given: "um service mockado"
+        def userService = Mock(UserService)
+
+        when: "chamo metodos mockados"
+        def usuarios = userService.buscarTodos()
+        def admin = userService.buscarAdmins()
+
+        then: "interacoes verificadas"
+        1 * userService.buscarTodos() >> [new User('1', 'Teste', 'test@email.com', 'USER')]
+        1 * userService.buscarAdmins() >> []
+
+        and: "retornos configurados"
+        usuarios.size() == 1
+        admin.size() == 0
+    }
 }
 ```
 
 #### `ReportServiceSpec` – Testes de relatórios
 
 ```groovy
-def "extrair emails com spread operator"() {
-    given: "usuarios"
-    def users = [
-        new User('1', 'Ana', 'ana@email.com', 'ADMIN'),
-        new User('2', 'Carlos', 'carlos@email.com', 'USER')
-    ]
+import spock.lang.Specification
+import spock.lang.Shared
 
-    expect: "emails extraidos com spread operator"
-    service.extrairEmails(users) == ['ana@email.com', 'carlos@email.com']
-}
+class ReportServiceSpec extends Specification {
+    @Shared service = new ReportService()
 
-def "agrupar por role"() {
-    given: "usuarios com roles diferentes"
-    def users = [
-        new User('1', 'Ana', 'a@email.com', 'ADMIN'),
-        new User('2', 'Joao', 'j@email.com', 'USER'),
-        new User('3', 'Maria', 'm@email.com', 'ADMIN')
-    ]
+    def "extrair emails retorna lista de emails"() {
+        given: "usuarios"
+        def usuarios = [
+            new User('1', 'Ana', 'ana@email.com', 'ADMIN'),
+            new User('2', 'Carlos', 'carlos@email.com', 'USER'),
+            new User('3', 'Maria', 'maria@email.com', 'USER')
+        ]
 
-    expect: "agrupamento correto"
-    service.agruparPorRole(users) == [
-        ADMIN: ['Ana', 'Maria'],
-        USER: ['Joao']
-    ]
+        when: "extrai emails"
+        def emails = service.extrairEmails(usuarios)
+
+        then: "emails extraidos corretamente"
+        emails.size() == 3
+        emails == ['ana@email.com', 'carlos@email.com', 'maria@email.com']
+    }
+
+    def "agrupar por role retorna grupos corretos"() {
+        given: "usuarios com diferentes roles"
+        def usuarios = [
+            new User('1', 'Ana', 'ana@email.com', 'ADMIN'),
+            new User('2', 'Carlos', 'carlos@email.com', 'USER'),
+            new User('3', 'Maria', 'maria@email.com', 'ADMIN')
+        ]
+
+        when: "agrupo por role"
+        def grupos = service.agruparPorRole(usuarios)
+
+        then: "grupos corretos"
+        grupos.containsKey('ADMIN')
+        grupos.containsKey('USER')
+        grupos['ADMIN'].size() == 2
+        grupos['USER'].size() == 1
+        grupos['ADMIN'] == ['Ana', 'Maria']
+    }
+
+    def "gerar relatorio sem criterios retorna relatorio completo"() {
+        given: "lista de usuarios"
+        def usuarios = [
+            new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN'),
+            new User('2', 'Carlos Santos', 'carlos@email.com', 'USER'),
+            new User('3', 'Maria Oliveira', 'maria@email.com', 'USER')
+        ]
+
+        when: "gero relatorio sem criterios"
+        def relatorio = service.gerarRelatorioUsuarios(usuarios, null)
+
+        then: "relatorio contem dados"
+        relatorio.contains('RELATÓRIO DE USUÁRIOS')
+        relatorio.contains('Total de usuários: 3')
+    }
 }
 ```
 
@@ -1250,18 +1462,18 @@ mvn clean verify
 ```
 
 **Resultados dos testes:**
-- **CalculatorSpec** — 6 testes (aritmética básica)
-- **ClosureSpec** — 18 testes (todas as features de closure)
-- **AccountSpec** — 15 testes (conta bancária completa)
+- **CalculatorSpec** — 19 testes (aritmética básica + lifecycle)
+- **ClosureSpec** — 20 testes (todas as features de closure)
+- **AccountSpec** — 24 testes (conta bancária completa)
 - **InvoiceSpec** — 50 testes (fatura com transições de estado)
-- **UserSpec** — 11 testes (validação de email e roles)
+- **UserSpec** — 17 testes (validação de email e roles)
 - **UserServiceSpec** — 21 testes (CRUD + JSON + mock)
 - **ReportServiceSpec** — 10 testes (relatórios + agrupamento)
 - **EmployeeServiceSpec** — 4 testes (funcionários)
-- **MetaprogrammingSpec** — 15 testes (DSL + AST)
+- **MetaprogrammingSpec** — 11 testes (DSL + AST)
 - **MockingAndStubbingSpec** — 9 testes (mocks + stubs avançados)
 
-**Total: 159 testes passando!**
+**Total: 185 testes passando!**
 
 ---
 

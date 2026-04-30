@@ -1,6 +1,7 @@
 package br.com.eduardoenemark.groovyespock.testes.app.domain
 
 class Employee {
+
     String nome
     String cargo
     double salario

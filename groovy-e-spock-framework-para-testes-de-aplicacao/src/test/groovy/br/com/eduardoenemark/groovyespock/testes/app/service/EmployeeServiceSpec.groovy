@@ -7,7 +7,8 @@ import spock.lang.*
 @Narrative('Testes demonstrando ciclo de vida e hooks do Spock.')
 class EmployeeServiceSpec extends Specification {
 
-    @Shared def listaEmpregados = []
+    @Shared
+    def listaEmpregados = []
 
     def setupSpec() {
         println "=== setupSpec: cria conexao/com recursos compartilhados ==="

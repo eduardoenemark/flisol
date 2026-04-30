@@ -7,10 +7,11 @@ import org.springframework.stereotype.Service
 
 @Service
 class UserService {
+
     private static final Map<String, User> usersDatabase = [
-        '1': new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN'),
-        '2': new User('2', 'Carlos Santos', 'carlos@email.com', 'USER'),
-        '3': new User('3', 'Maria Oliveira', 'maria@email.com', 'USER')
+            '1': new User('1', 'Ana Silva', 'ana@email.com', 'ADMIN'),
+            '2': new User('2', 'Carlos Santos', 'carlos@email.com', 'USER'),
+            '3': new User('3', 'Maria Oliveira', 'maria@email.com', 'USER')
     ]
 
     static Map<String, User> getDatabase() {
@@ -26,10 +27,10 @@ class UserService {
         }
 
         def usuario = new User(
-            (usersDatabase.size() + 1).toString(),
-            nome,
-            email,
-            role
+                (usersDatabase.size() + 1).toString(),
+                nome,
+                email,
+                role
         )
         usersDatabase[usuario.id] = usuario
         return usuario
@@ -78,10 +79,10 @@ class UserService {
     User usuarioDeJson(String jsonStr) {
         def map = new JsonSlurper().parseText(jsonStr) as Map<String, String>
         return new User(
-            map.get('id', (usersDatabase.size() + 1).toString()),
-            map.get('Nome'),
-            map.get('Email'),
-            map.get('Role', 'USER')
+                map.get('id', (usersDatabase.size() + 1).toString()),
+                map.get('Nome'),
+                map.get('Email'),
+                map.get('Role', 'USER')
         )
     }
 }

@@ -5,7 +5,9 @@ import spock.lang.Unroll
 import spock.lang.Specification
 
 class AccountSpec extends Specification {
-    @Shared acc = new Account('001', 'Joao Silva', 1000.0, 1.5)
+
+    @Shared
+    def acc = new Account('001', 'Joao Silva', 1000.0, 1.5)
 
     def setupSpec() {
         println "=== setupSpec: AccountSpec ==="

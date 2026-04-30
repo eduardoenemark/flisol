@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class ReportService {
+
     String gerarRelatorioUsuarios(List<User> usuarios, Map<String, Integer> criterios) {
         def cabecalho = "=" * 60
         def cabecalho2 = "-" * 60
@@ -28,7 +29,7 @@ class ReportService {
 
         usuarios.eachWithIndex { usuario, indice ->
             relatorio << String.format("%2d. %-20s %-30s [${usuario.role}]\n",
-                indice + 1, usuario.nome, usuario.email)
+                    indice + 1, usuario.nome, usuario.email)
         }
 
         relatorio << "${cabecalho}\n"

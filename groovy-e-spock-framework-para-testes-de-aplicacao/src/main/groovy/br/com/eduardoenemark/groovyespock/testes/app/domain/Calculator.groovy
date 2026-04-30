@@ -1,6 +1,7 @@
 package br.com.eduardoenemark.groovyespock.testes.app.domain
 
 class Calculator {
+
     int calcular(int a, int b, String op) {
         switch (op) {
             case '+': return a + b

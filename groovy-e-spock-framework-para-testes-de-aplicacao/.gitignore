@@ -82,3 +82,91 @@ Thumbs.db
 *.swp
 *~
 annotations
+
+# ==========================================
+# Python Bytecode & Compiled Files
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# ==========================================
+# Virtual Environments
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+
+# ==========================================
+# Distribution & Packaging
+# ==========================================
+dist/
+build/
+*.egg-info/
+*.egg
+*.whl
+*.tar.gz
+
+# ==========================================
+# IDE & Editors
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-*
+
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+.env
+.env.local
+.env.*.local
+
+# ==========================================
+# Jupyter Notebooks
+# ==========================================
+.ipynb_checkpoints/
+
+# ==========================================
+# Testing, Linting & Coverage
+# ==========================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+
+# ==========================================
+# Logs & Data Artifacts
+# ==========================================
+*.log
+*.log.[0-9]
+*.gz
+*.tmp
+*.bak
+*.sqlite3
+*.db
+
+# ==========================================
+# OS-Specific
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==========================================
+# Misc / Project-Specific Additions
+# ==========================================
+# Add framework-specific or team conventions below
+# e.g., data/raw/, notebooks/, output/
+

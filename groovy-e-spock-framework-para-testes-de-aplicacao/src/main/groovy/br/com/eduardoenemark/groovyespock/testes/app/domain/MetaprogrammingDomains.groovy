@@ -13,7 +13,7 @@ class DSLite {
 }
 
 // PessoaAST - example of AST Transformations
-@ToString(includeNames=true, includePackage=false)
+@ToString(includeNames = true, includePackage = false)
 class PessoaAST {
     String nome
     int idade
@@ -23,7 +23,9 @@ class PessoaAST {
 @CompileStatic
 class Calculadora {
     int somar(int a, int b) { a + b }
+
     int subtrair(int a, int b) { a - b }
+
     int multiplicar(int a, int b) { a * b }
 
     def methodMissing(String name, args) {

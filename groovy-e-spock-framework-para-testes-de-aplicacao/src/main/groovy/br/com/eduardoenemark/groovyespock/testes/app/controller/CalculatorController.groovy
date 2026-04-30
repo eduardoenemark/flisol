@@ -1,11 +1,15 @@
 package br.com.eduardoenemark.groovyespock.testes.app.controller
 
 import br.com.eduardoenemark.groovyespock.testes.app.domain.Calculator
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping('/api/calculadora')
 class CalculatorController {
+
     private final Calculator calculator = new Calculator()
 
     @GetMapping('/soma/{a}/{b}')

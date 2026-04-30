@@ -111,7 +111,7 @@ class MetaprogrammingSpec extends Specification {
 
     def "potencia operator - 2 ** 100"() {
         given: "potencia grande com G"
-        def resultado = 2G ** 100
+        def resultado = 2G**100
 
         expect: "resultado com precisao arbitraria"
         resultado instanceof java.math.BigInteger

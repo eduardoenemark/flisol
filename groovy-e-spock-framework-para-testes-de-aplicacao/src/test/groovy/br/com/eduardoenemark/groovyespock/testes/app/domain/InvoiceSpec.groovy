@@ -6,7 +6,8 @@ import spock.lang.Unroll
 
 class InvoiceSpec extends Specification {
 
-    @Shared List<Invoice> faturasCriadas = []
+    @Shared
+    List<Invoice> faturasCriadas = []
 
     def setupSpec() {
         println "=== setupSpec: inicializacao de recursos compartilhados ==="
@@ -131,11 +132,11 @@ class InvoiceSpec extends Specification {
 
         where:
         valorBaseParam | descontoPerc || totalEsperado
-        100.0          | 10           | 90.0
-        500.0          | 20           | 400.0
-        1000.0         | 0            | 1000.0
-        200.0          | 50           | 100.0
-        100.0          | 100          | 0.0
+        100.0          | 10            | 90.0
+        500.0          | 20            | 400.0
+        1000.0         | 0             | 1000.0
+        200.0          | 50            | 100.0
+        100.0          | 100           | 0.0
     }
 
     def "definir desconto sobre fatura PENDING atualiza porem mantém status"() {
@@ -498,8 +499,8 @@ class InvoiceSpec extends Specification {
 
         then: "interacao verificada e retorno configurado"
         1 * servicoFaturas.buscarFaturasPorCliente("Cliente X") >> [
-            new Invoice("INV-100", "Cliente X", 200.0),
-            new Invoice("INV-101", "Cliente X", 300.0)
+                new Invoice("INV-100", "Cliente X", 200.0),
+                new Invoice("INV-101", "Cliente X", 300.0)
         ]
 
         and: "retorno configurado"
@@ -569,7 +570,10 @@ class InvoiceSpec extends Specification {
 
 class InvoiceService {
     List<Invoice> buscarFaturasPorCliente(String cliente) { return [] }
+
     double getTaxaAdmin() { return 0.0 }
+
     int getDiasVencimento() { return 0 }
+
     boolean cancelarFatura(String numero) { return false }
 }

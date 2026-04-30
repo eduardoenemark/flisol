@@ -2,11 +2,13 @@ package br.com.eduardoenemark.groovyespock.testes.app.domain
 
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
+
 import java.time.LocalDateTime
 
 @CompileStatic
 @ToString(includeNames = true, includePackage = false)
 class Transaction {
+
     String id
     User user
     double amount

@@ -2,11 +2,12 @@ package br.com.eduardoenemark.groovyespock.testes.app.service
 
 
 class ProductService {
+
     List<Map<String, String>> getProdutos() {
         return [
-            [id: '1', nome: 'Notebook', preco: '4500.00'],
-            [id: '2', nome: 'Mouse', preco: '89.90'],
-            [id: '3', nome: 'Teclado', preco: '179.90']
+                [id: '1', nome: 'Notebook', preco: '4500.00'],
+                [id: '2', nome: 'Mouse', preco: '89.90'],
+                [id: '3', nome: 'Teclado', preco: '179.90']
         ]
     }
 

@@ -1,6 +1,7 @@
 package br.com.eduardoenemark.groovyespock.testes.app.service
 
-import spock.lang.*
+
+import spock.lang.Specification
 
 class MockingAndStubbingSpec extends Specification {
 
