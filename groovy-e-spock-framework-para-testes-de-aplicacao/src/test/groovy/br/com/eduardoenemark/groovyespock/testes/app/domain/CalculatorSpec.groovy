@@ -97,4 +97,87 @@ class CalculatorSpec extends Specification {
         100 | 200
         -5  | 5
     }
+
+    @Unroll
+    def "operacao com numeros negativos #a #op #b = #resultado"() {
+        given: "calculadora inicializada"
+
+        expect: "operacoes com negativos funcionam"
+        calc.calcular(a, b, op) == resultado
+
+        where:
+        a  | b  | op  || resultado
+        -5 | 3  | '+' || -2
+        -5 | -3 | '+' || -8
+        5  | -3 | '-' || 8
+        -4 | -2 | '*' || 8
+        -10| 2  | '/' || -5
+        10 | -2 | '/' || -5
+    }
+
+    def "isPar com zero retorna true (zero e par)"() {
+        expect: "zero e par"
+        calc.isPar(0) == true
+    }
+
+    def "isPar com numero negativo par"() {
+        expect: "negativo par"
+        calc.isPar(-4) == true
+    }
+
+    def "isPar com numero negativo impar"() {
+        expect: "negativo impar"
+        calc.isPar(-3) == false
+    }
+
+    def "calcularPi retorna valor preciso de pi"() {
+        given: "valor de pi"
+
+        expect: "pi como double com precision"
+        def pi = calc.calcularPi()
+        pi > 0
+        pi.toString().contains('3.141592653')
+    }
+
+    @Unroll
+    def "multiplicacao grande #a * #b = #resultado"() {
+        given: "calculadora inicializada"
+
+        expect: "multiplicacao funciona"
+        calc.calcular(a, b, '*') == resultado
+
+        where:
+        a      | b       || resultado
+        100    | 100     || 10000
+        1000   | 1000    || 1000000
+        999    | 999     || 998001
+    }
+
+    def "subtracao com zero"() {
+        expect: "x - 0 = x"
+        calc.calcular(5, 0, '-') == 5
+    }
+
+    def "soma com zero"() {
+        expect: "x + 0 = x"
+        calc.calcular(5, 0, '+') == 5
+    }
+
+    def "divisao exata"() {
+        expect: "divisao exata"
+        calc.calcular(100, 4, '/') == 25
+    }
+
+    def "divisao com resto (truncado)"() {
+        expect: "divisao inteira (resto truncado)"
+        calc.calcular(10, 3, '/') == 3
+    }
+
+    def "operacao com string vazia lanza excecao"() {
+        when: "tento operacao com string vazia"
+        calc.calcular(10, 5, '')
+
+        then: "excecao e lancada"
+        thrown(IllegalArgumentException)
+    }
 }

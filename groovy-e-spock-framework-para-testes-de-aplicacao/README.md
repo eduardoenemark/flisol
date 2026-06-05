@@ -1,4 +1,4 @@
-# Groovy & Spock Framework para Testes de Aplicação <font size="2">versão 1.2 - Flisol 2026</font>
+# Groovy & Spock Framework para Testes de Aplicação <font size="2">versão 1.3 - Flisol 2026</font>
 
 ![alt Flisol](resources/imgs/flisol.png "FliSol")
 
@@ -52,6 +52,15 @@
     - [4. FinancialService – Cálculos Financeiros](#4-financialservice--cálculos-financeiros)
     - [5. Spring Boot REST Controller](#5-spring-boot-rest-controller)
     - [6. Testes de Integração](#6-testes-de-integração)
+    - [7. Transaction – Transações com @CompileStatic](#7-transaction--transacoes-com-compilestatic)
+    - [8. FinancialService – Cálculos Financeiros Avançados](#8-financialservice--cálculos-financeiros-avançados)
+    - [9. ProductService & OrderService – E-commerce](#9-productservice--orderservice--e-commerce)
+    - [7. Transaction – Transações com @CompileStatic](#7-transaction--transacoes-com-compilestatic)
+    - [8. FinancialService – Cálculos Financeiros Avançados](#8-financialservice--cálculos-financeiros-avançados)
+    - [9. ProductService & OrderService – E-commerce](#9-productservice--orderservice--e-commerce)
+    - [7. Transaction – Transações com @CompileStatic](#7-transaction--transacoes-com-compilestatic)
+    - [8. FinancialService – Cálculos Financeiros Avançados](#8-financialservice--cálculos-financeiros-avançados)
+    - [9. ProductService & OrderService – E-commerce](#9-productservice--orderservice--e-commerce)
       - [`AccountSpec` – Testes de conta bancária](#accountspec--testes-de-conta-bancária)
       - [`InvoiceSpec` – Testes de fatura](#invoicespec--testes-de-fatura)
       - [`UserSpec` – Testes de validação de email](#userspec--testes-de-validação-de-email)
@@ -1185,6 +1194,22 @@ class CalculatorController {
 
 ### 6. Testes de Integração
 
+### 7. Transaction – Transações com @CompileStatic
+
+Domain class com `@CompileStatic` e `@ToString`, representando transações financeiras.
+
+### 8. FinancialService – Cálculos Financeiros Avançados
+
+Service com closures e Groovy power operator (`**`) para juros compostos, parcelas e descontos progressivos.
+
+### 9. ProductService & OrderService – E-commerce
+
+Services para catálogo de produtos e processamento de pedidos com mocks avançados.
+
+---
+
+### 6. Testes de Integração
+
 #### `AccountSpec` – Testes de conta bancária
 
 ```groovy
@@ -1445,6 +1470,106 @@ class ReportServiceSpec extends Specification {
 }
 ```
 
+### 7. Transaction – Transações com @CompileStatic
+
+Domain class com `@CompileStatic` e `@ToString`, representando transações financeiras:
+
+```groovy
+@CompileStatic
+@ToString(includeNames = true, includePackage = false)
+class Transaction {
+    String id
+    User user
+    double amount
+    String type // DEBIT, CREDIT, REFUND
+    LocalDateTime createdAt
+
+    boolean isPositive() { amount > 0 }
+    boolean isRefund() { type == 'REFUND' }
+    String formatCurrency() { "R\$ ${String.format('%,.2f', amount)}" }
+}
+```
+
+**Testes (TransactionSpec):**
+- `isPositive()` com valores positivos, negativos e zero
+- `isRefund()` para tipos CREDIT, DEBIT, REFUND
+- `formatCurrency()` com formatação locale US (`%,.2f`)
+- `toString()` com @ToString incluindo todos campos
+- Transaction com user null
+- Data futura e presente (LocalDateTime)
+- Valores grandes (BigInteger double)
+- Múltiplas transações do mesmo user
+
+### 8. FinancialService – Cálculos Financeiros Avançados
+
+Service com closures e Groovy power operator (`**`) para cálculos:
+
+```groovy
+class FinancialService {
+    def calcularJuros(double capital, double taxaJuros, int meses) {
+        capital * ((1 + taxaJuros / 100) ** meses)
+    }
+
+    def calcularParcela(double valor, int parcelas, double taxaMensal) {
+        def fator = (taxaMensal * ((1 + taxaMensal)**parcelas)) / (((1 + taxaMensal)**parcelas) - 1)
+        return valor * fator
+    }
+
+    def calcularDesconto(double valor, List<Integer> faixas, List<Double> descontos) {
+        // Desconto progressivo por faixa
+        def melhorDesconto = 0 as BigDecimal
+        for (int i = 0; i < faixas.size(); i++) {
+            if (valor >= faixas[i]) {
+                melhorDesconto = descontos[i] as BigDecimal
+            }
+        }
+        return valor - (valor * melhorDesconto / 100)
+    }
+
+    def gerarRelatorioFinanceiro(List<Transaction> transacoes) {
+        // Total entradas, saídas, reembolsos e saldo
+        [totalEntradas: ..., totalSaidas: ..., totalReembolsos: ..., saldo: ..., quantidade: ...]
+    }
+}
+```
+
+**Testes (FinancialServiceSpec):**
+- Juros compostos com múltiplos cenários (data-driven)
+- Parcelamento com diferentes taxas e parcelas
+- Desconto progressivo por faixas
+- Relatório financeiro (credit, debit, refund mix)
+- Edge cases: taxa zero → NaN, meses negativo
+- Mocks e stubs do FinancialService
+
+### 9. ProductService & OrderService – E-commerce
+
+Services para catálogo de produtos e processamento de pedidos:
+
+```groovy
+class ProductService {
+    List<Map<String, String>> getProdutos() { /* catalogo */ }
+    Map<String, String> getProdutoPorId(String id) { /* busca */ }
+    Map<String, String> criarProduto(String nome, double preco) { /* cria */ }
+    boolean excluirProduto(String id) { /* remove */ }
+}
+
+class OrderService {
+    boolean processarCompra(String produtoId, int quantidade) { /* compra */ }
+    String verificarEstoque(String produtoId) { /* estoque */ }
+}
+```
+
+**Testes (ProductServiceSpec + OrderServiceSpec):**
+- Catalogo com 3 produtos (Notebook, Mouse, Teclado)
+- Busca por ID, criação, exclusão
+- Processamento de compras com múltiplos cenários
+- Verificação de estoque
+- Mocks avançados: `1 *`, `(1..3) *`, `0 *`, order verification
+- Stubs com comportamento customizado por argumento
+- Mock vs stub comparison patterns
+
+---
+
 ### Rodar os Exemplos
 
 ```bash
@@ -1462,7 +1587,7 @@ mvn clean verify
 ```
 
 **Resultados dos testes:**
-- **CalculatorSpec** — 19 testes (aritmética básica + lifecycle)
+- **CalculatorSpec** — 39 testes (aritmética básica + lifecycle + negativos + pi)
 - **ClosureSpec** — 20 testes (todas as features de closure)
 - **AccountSpec** — 24 testes (conta bancária completa)
 - **InvoiceSpec** — 50 testes (fatura com transições de estado)
@@ -1472,8 +1597,12 @@ mvn clean verify
 - **EmployeeServiceSpec** — 4 testes (funcionários)
 - **MetaprogrammingSpec** — 11 testes (DSL + AST)
 - **MockingAndStubbingSpec** — 9 testes (mocks + stubs avançados)
+- **TransactionSpec** — 23 testes (transações com @CompileStatic, isPositive, isRefund, formatCurrency, @ToString)
+- **FinancialServiceSpec** — 38 testes (juros compostos, parcelas, descontos em faixas, relatorio financeiro, mocks/stubs)
+- **ProductServiceSpec** — 14 testes (catalogo produtos, CRUD, mocks/stubs)
+- **OrderServiceSpec** — 17 testes (processamento compras, estoque, mocks avançados)
 
-**Total: 185 testes passando!**
+**Total: 297 testes passando!**
 
 ---
 
@@ -1497,7 +1626,15 @@ mvn clean verify
 
 <font size="2">Este documento foi construído utilizando Markdown e segue padrões de documentação técnica.</font>
 
-**Apresentação Groovy & Spock v1.0.**
+**Apresentação Groovy & Spock v1.3 — Flisol 2026.**
+
+### 📝 Changelog v1.3 (2026-06-04)
+- **Novo:** TransactionSpec — 23 testes de domain class com @CompileStatic
+- **Novo:** FinancialServiceSpec — 38 testes de cálculos financeiros
+- **Novo:** ProductServiceSpec — 14 testes de catálogo produtos
+- **Novo:** OrderServiceSpec — 17 testes de processamento pedidos
+- **Aprimorado:** CalculatorSpec — +20 testes (negativos, pi, edge cases)
+- **Total:** 185 → 297 testes passando
 
 ### Referências
 
