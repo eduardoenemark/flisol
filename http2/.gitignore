@@ -1,0 +1,8 @@
+bin/
+refs/
+*.pdf
+flisol-2024-apresentacao-http2.md
+format
+curl-format.txt
+format
+.history
