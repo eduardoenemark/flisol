@@ -2,7 +2,7 @@
 
 ![FliSol 2024 — Festival Livre de Software](imgs/flisol.png)
 
-> *"Temos um HTTP na versão 1.1 muito bem funcional e conhecido na Web, além de padrões de desenvolvimento como SOA e REST construídos sobre ele, porém não tão performático."*
+> *Este artigo é baseado na apresentação "HTTP/2: +Performance" apresentada no FliSol 2024.*
 
 Se você é desenvolvedor ou trabalha com infraestrutura web, já deve ter sentido que uma página que deveria carregar em segundos leva mais do que o esperado. A primeira reação é culpar o JavaScript, o tamanho das imagens, a conexão do usuário. Mas existe um fator que muitas vezes fica escondido atrás dessas camadas — e é o protocolo de transporte.
 
@@ -80,6 +80,8 @@ O HTTP/1.1 trouxe melhorias que ainda são a base do desenvolvimento web moderno
 - **Novos headers**: `Host`, `Accept-Encoding`, `CORS` e `CSP`
 
 O HTTP/1.1 se tornou tão onipresente que arquiteturas inteiras foram construídas sobre ele: **SOA** (Service-Oriented Architecture), **REST** (Representational State Transfer). Porém, a performance dava um tom limitante na transferência de recursos.
+
+> *"Temos um HTTP na versão 1.1 muito bem funcional e conhecido na Web, além de padrões de desenvolvimento como SOA e REST construídos sobre ele, porém não tão performático."*
 
 > **Tecnologias entre versões do HTTP:** SSL da Netscape em 1994 para um HTTP +seguro que depois virou o TLS, Server-sent events. Ajax, WebSocket *et al*.
 
@@ -169,6 +171,8 @@ Resultado: **um único handshake TCP**, zero head-of-line blocking entre streams
 
 ### Benchmarks: HTTP/1.1 vs HTTP/2
 
+> *Testes de benchmark realizados entre 08/04 e 09/04/2024.*
+
 Para demonstrar a diferença na prática, realizei testes comparativos utilizando o [Tune The Web Performance Test](https://www.tunetheweb.com/performance-test-360) — uma ferramenta que solicita **a mesma imagem 360 vezes**, variando apenas um parâmetro de query (`?count=1` até `?count=360`).
 
 #### Teste HTTP/1.1
@@ -187,8 +191,6 @@ A inspeção pelo Chrome DevTools revela o problema na prática: múltiplas cone
 | ![tunetheweb http performance test devtools ](imgs/tunetheweb-http-performance-devtools.png) |
 | :--: |
 | Chrome DevTools — Waterfall do teste HTTP/1.1 |
-
-<!-- *O painel Network do Chrome DevTools revela o gargalo: barras azuis longas representam o tempo *stalled* — recursos aguardando uma conexão TCP livre. Cada Connection ID diferente indica uma nova conexão estabelecida.* -->
 
 #### Teste HTTP/2
 
@@ -351,14 +353,12 @@ Para qualquer implementação em produção, a verificação de conformidade com
 
 ### Conclusão: a pergunta não é mais "vale a pena?"
 
-Visto todo este conjunto comparativo entre as versões do HTTP. Pensar sobre performance de uma aplicação Web é algo importante. Logo, o HTTP/2 passa a ser uma feature a ser considerada na arquitetura dos projetos.
+Passaram-se mais de 25 anos desde a primeira versão do HTTP, e a web hoje é um ecossistema radicalmente diferente do que Tim Berners-Lee imaginou no CERN. Páginas que pesam mais de 2,6 MB com 70+ recursos na mediana não cabem nos limites de um protocolo projetado para documentos pequenos e estáticos.
 
-Após a migração sempre válido realizar muitos testes e inspeções no sentido de conferi se o aplicado está no mínimo em conformidade. Agradeço pela paciência
+O HTTP/2 não é uma evolução opcional — é uma resposta necessária à escala da web moderna. A multiplexação sobre uma única conexão TCP, a compressão de headers via HPACK, a priorização de streams e o server push reestruturam completamente a forma como cliente e servidor se comunicam. Os benchmarks deste artigo mostram resultados expressivos: de 61 segundos para menos de 2 segundos no mesmo cenário de teste, com uma única conexão TCP substituindo dezenas de conexões paralelas.
 
----
+Mas o protocolo por si só não é solução mágica. Como destacado, o HTTP/2 maximiza aplicações bem construídas — e não salva aplicações mal arquitetadas. Imagens sem otimização, falta de cache, backends lentos e excessos de headers personalizados continuam sendo problemas reais que vão além do transporte.
 
-<!-- 19. **High Performance Browser Networking** — Ilya Grigorik. O'Reilly Media, 2017. [Capítulo 12: HTTP/2](https://hpbn.co/http2/) -->
+A adoção do HTTP/2 é hoje uma decisão pragmática: suporte universal nos navegadores, maturidade nas principais implementações (Apache, Nginx, Caddy), e a migração passa por configuração de servidor, não por reescrita de código. O próximo passo — o HTTP/3 com QUIC sobre UDP — já está em andamento, endereçando o head-of-line blocking na camada de transporte. Mas enquanto ele se consolida, o HTTP/2 continua sendo o salto mais significativo de performance disponível hoje sem mudanças na infraestrutura de rede.
 
-*Testes de benchmark realizados entre 08/04 e 09/04/2024.*
-
-*Este artigo é baseado na apresentação "HTTP/2: +Performance" apresentada no FliSol 2024.*
+A pergunta nunca foi "vale a pena?". É "por que ainda não migrei?".
