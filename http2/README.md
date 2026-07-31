@@ -4,7 +4,7 @@
 
 > *Este artigo é baseado na apresentação "HTTP/2: +Performance" apresentada no FliSol 2024.*
 
-Se você é desenvolvedor ou trabalha com infraestrutura web, já deve ter sentido que uma página que deveria carregar em segundos leva mais do que o esperado. A primeira reação é culpar o JavaScript, o tamanho das imagens, a conexão do usuário. Mas existe um fator que muitas vezes fica escondido atrás dessas camadas.
+Se você é desenvolvedor ou trabalha com infraestrutura web, já deve ter sentido que uma página que deveria carregar em segundos leva mais do que o esperado. A primeira reação é culpar o JavaScript, o tamanho das imagens, a conexão do usuário. Mas existe um fator que muitas vezes fica escondido atrás dessas camadas - protocolo de aplicação.
 
 A web cresceu. Segundo o [HTTP Archive Web Almanac 2024](https://almanac.httparchive.org/en/2024/page-weight), as páginas desktop pesam em média **2.652 KB** (~2,6 MB) e carregam **~71 recursos na mediana** — chegando a mais de 170 nos sites mais pesados. O HTTP/1.1, nascido em 1997, não foi projetado para essa realidade. Ele sobreviveu por quase duas décadas com "puxadinhos" — múltiplas conexões paralelas, *sprites* de imagem, *domain sharding* — mas chegou o limite.
 
@@ -141,7 +141,7 @@ A RFC 2616 (junho de 1999) orientava que clientes abrissem **no máximo 2 conex�
 
 A web mudou. A RFC 7230 (junho de 2014) relaxou a recomendação, e os navegadores modernos tendem a limitar **6 conexões simultâneas por domínio**. O Firefox expõe esse limite na propriedade `network.http.max-persistent-connections-per-server`, com valor 6 por padrão.
 
-O problema é escalar: se uma página moderna tem 100 recursos de um mesmo domínio, e o navegador abre no máximo 6 conexões, **94 recursos ficam esperando na fila**. Logo, percebe-se a existência de um *blocking* no esquema de *input/output* da conexão. No HTTP/2 este bloqueio não existe, temos um *non blocking*.
+O problema é escalar: se uma página moderna tem 100 recursos de um mesmo domínio, e o navegador abre no máximo 6 conexões, **94 recursos ficam esperando na fila**. Logo, percebe-se a existência de um *blocking* no esquema de *input/output* da conexão. No HTTP/2 este bloqueio não existe, temos um *non-blocking*.
 
 | ![HTTP/1.1: multiplas conexões em paralelo](imgs/http1-multiple-parallel-connections.png) |
 | :--: |
@@ -159,7 +159,7 @@ No HTTP/2, todos os recursos trafegam em **streams** dentro de uma única conex�
 | :--: |
 | HTTP/2: Conexão multiplexada (*HTTP/2 in Action, Barry Pollard. Manning Publications, 2019*) |
 
-Resultado: **um único handshake TCP**, zero blocking entre streams, e throughput significativamente mais eficiente.
+Resultado: **um único handshake TCP**, zero blocking entre input/output e throughput significativamente mais eficiente.
 
 ### Benchmarks: HTTP/1.1 vs HTTP/2
 
@@ -285,10 +285,10 @@ Existem várias formas de verificar o suporte ao HTTP/2. Vou mostrar as mais pr�
 
 #### curl
 
-Você pode verificar o suporte via [curl](https://curl.se/docs/manpage.html), forçando uma requisição HTTP/2 ao servidor e observar se ao final se o response é igual a **2**. No exemplo de comando foi adicionado *-k* (ignorar validação de certificado)  e *-v* (logar todo o fluxo da requisição):
+Você pode verificar o suporte via [curl](https://curl.se/docs/manpage.html), forçando uma requisição HTTP/2 ao servidor e observar se o response é igual a **2**. No exemplo de comando foi adicionado *-k* (ignorar validação de certificado)  e *-v* (logar todo o fluxo da requisição):
 
 ```bash
-curl --http2 -k -v -I -s -o /dev/null -w "%{http_version}\n" https://debian.org     
+curl --http2 -k -v -I -s -o /dev/null -w "%{http_version}\n" https://debian.org
 ```
 
 **Response:**
@@ -320,7 +320,7 @@ curl --http2 -k -v -I -s -o /dev/null -w "%{http_version}\n" https://debian.org
 2
 ```
 
-Percebe-se no log da requisição a ocorrência de HTTP/2 no envio e, também, na resposta - 2 ao final.
+Percebe-se no log da requisição a ocorrência de HTTP/2 no envio e, também, na resposta - o valor 2 ao final.
 
 #### h2spec: Conformidade
 
