@@ -10,7 +10,7 @@ A web cresceu. Segundo o [HTTP Archive Web Almanac 2024](https://almanac.httparc
 
 O HTTP/2 não é uma evolução incremental. É uma **reestruturação completa** de como os dados trafegam entre cliente e servidor. A diferença é substancial e carece de nossa atenção para entendimento do funcionamento desta versão.
 
-### A Internet e a Web
+### Internet vs Web
 
 Antes de entrar no protocolo, é importante separar dois conceitos que muita gente confunde: **Internet ≠ World Wide Web**.
 
@@ -20,7 +20,7 @@ Tim Berners-Lee e sua equipe no CERN desenvolveram o primeiro protótipo do HTTP
 
 ### Linha do tempo
 
-#### HTTP/0.9 — Agosto de 1991: apenas uma linha
+#### HTTP/0.9 (Agosto de 1991)
 
 O primeiro HTTP era tão minimalista que não tinha headers, códigos de status ou body estruturado. Uma única linha:
 
@@ -36,7 +36,7 @@ E a resposta era o conteúdo HTML puro. Sem metadados. Sem controle. Funcionou e
 </html>
 ```
 
-#### HTTP/1.0 — Maio de 1996 (RFC 1945): a estrutura chega
+#### HTTP/1.0 (Maio de 1996)
 
 O HTTP/1.0 trouxe métodos (`GET`, `POST`), headers, códigos de status e suporte a múltiplos tipos de conteúdo. Pela primeira vez, era possível enviar uma página HTML com imagens embutidas em requisições separadas:
 
@@ -69,7 +69,7 @@ Content-Type: text/gif
 
 Cada recurso precisava de uma nova conexão. Se a página tinha uma imagem, o navegador abria outra conexão TCP e fazia outro `GET`. Era funcional, mas ineficiente.
 
-### HTTP/1.1 — Janeiro de 1997 (RFC 2068): o padrão que dominou
+### HTTP/1.1 (Janeiro de 1997)
 
 O HTTP/1.1 trouxe melhorias que ainda são a base do desenvolvimento web moderno:
 
@@ -85,7 +85,7 @@ O HTTP/1.1 se tornou tão onipresente que arquiteturas inteiras foram construíd
 
 > **Tecnologias entre versões do HTTP:** SSL da Netscape em 1994 para um HTTP +seguro que depois virou o TLS, Server-sent events. Ajax, WebSocket *et al*.
 
-### SPDY — 2009: o experimento que mudou tudo
+### SPDY (2009)
 
 Antes do HTTP/2, existiu o **SPDY** (*"speedy"*), um protocolo experimental criado por Mike Belshe e Robert Peon da Google em 2009 que apresentou novos mecanismos que foram depois incorporados ao HTTP/2. O objetivo era simples: resolver os gargalos de performance do HTTP/1.1.
 
@@ -101,7 +101,7 @@ O resultado foi impressionante: **até 64% de redução no tempo de carregamento
 
 Em maio de 2015, publicado o **HTTP/2 (RFC 7540)** — essencialmente o SPDY oficializado como padrão IETF.
 
-### Anatomia do HTTP/1.1
+### HTTP/1.1: Estrutura
 
 O HTTP/1.1 é um protocolo **textual**. Cada mensagem é composta por três partes separadas por CRLF (Carriage Return, byte 13, e Line Feed, byte 10): os headers e o body formam, juntos, o que chamamos de *entity* (entidade).
 
@@ -117,7 +117,7 @@ O HTTP/1.1 é um protocolo **textual**. Cada mensagem é composta por três part
 
 Cada caractere, cada espaço, cada `\r\n` é processado pelo navegador, *client*, e pelo servidor. Headers são repetidos a cada requisição. Se você tem 20 headers de 500 bytes cada e faz 100 requisições, são **1 MB de metadados** trafegando na rede.
 
-### O HTTP/2: versão binária
+### HTTP/2: Binário
 
 No HTTP/2, as mesmas três partes continuam existindo (start line, headers, body). Mas a forma como são transmitidas muda completamente: **frames binários**, multiplexados sobre uma conexão única.
 
@@ -131,7 +131,7 @@ Em vez de texto legível por humanos, os dados são codificados em frames que s�
 
 > **Ponto fundamental:** as três partes da mensagem HTTP continuam as mesmas. A diferença está em *como* são transmitidas. É como comparar uma carta postal (HTTP/1.1) com um envelope digital compactado (HTTP/2).
 
-### Onde o HTTP está no modelo OSI?
+### HTTP e Modelo OSI
 
 É importante notar que o HTTP opera na **Camada 7 (Aplicação)** do modelo OSI. O transporte de dados depende da camada de transporte subjacente — tipicamente TCP (Camada 4).
 
@@ -143,7 +143,7 @@ O HTTP/2 não muda a camada OSI do protocolo. Ele redefine *como* os dados são 
 
 Isso significa que a migração para HTTP/2 não exige mudanças na rede, nos firewalls ou nos servidores proxy — apenas no servidor web e na configuração TLS.
 
-### HTTP/1.1 na Web é lento na prática
+### HTTP/1.1: Limitações
 
 A RFC 2616 (junho de 1999) orientava que clientes abrissem **no máximo 2 conexões persistentes** para qualquer servidor ou proxy. Essa premissa fazia sentido em 1999, quando páginas tinham cerca de 5-10 recursos.
 
@@ -159,7 +159,7 @@ O problema é escalar: se uma página moderna tem 100 recursos de um mesmo domí
 
 E se a página referencia recursos de outros domínios? Cada domínio adicional gera novas conexões. O resultado é: dezenas de conexões TCP abertas, cada uma com seu handshake TLS, consumindo memória no servidor e na rede.
 
-### HTTP/2: multiplexação sobre uma conexão
+### HTTP/2: Multiplexação
 
 No HTTP/2, todos os recursos trafegam em **streams** dentro de uma única conexão TCP. Cada stream é identificado por um `stream ID` e dividido em `frames` (análogos a pacotes TCP). Quando o cliente recebe todos os frames de um stream, ele reassembla a mensagem HTTP completa.
 
@@ -175,7 +175,7 @@ Resultado: **um único handshake TCP**, zero head-of-line blocking entre streams
 
 Para demonstrar a diferença na prática, realizei testes comparativos utilizando o [Tune The Web Performance Test](https://www.tunetheweb.com/performance-test-360) — uma ferramenta que solicita **a mesma imagem 360 vezes**, variando apenas um parâmetro de query (`?count=1` até `?count=360`).
 
-#### Teste HTTP/1.1
+#### HTTP/1.1: Testes
 
 | ![tunetheweb http performance test ](imgs/tunetheweb-http-performance-site.png) |
 | :--: |
@@ -192,7 +192,7 @@ A inspeção pelo Chrome DevTools revela o problema na prática: múltiplas cone
 | :--: |
 | Chrome DevTools — Waterfall do teste HTTP/1.1 |
 
-#### Teste HTTP/2
+#### HTTP/2: Testes
 
 | ![tunetheweb http performance test ](imgs/tunetheweb-http2-performance-site.png) |
 | :--: |
@@ -215,7 +215,7 @@ A inspeção pelo DevTools confirma: apenas **1 conexão TCP** ativa, com todos 
 
 *Com HTTP/2, todas as 360 requisições compartilham o mesmo Connection ID. Não há não há fila de espera, *stalled* — apenas uma conexão TCP processando todos os streams em paralelo.*
 
-#### Teste adicional: HTTP2 Demo
+#### HTTP2 Demo
 
 O site [http2demo.io](https://http2demo.io) faz um teste semelhante: carrega uma imagem composta por **170 imagens menores** e dispara sequências de requisições para compor o resultado visual.
 
@@ -233,7 +233,7 @@ A inspeção pelo Chrome DevTools (com as colunas *Method*, *Protocol*, *Time* e
 | :--: |
 | Chrome DevTools — HTTP/2 no http2demo.io |
 
-### O que o HTTP/2 NÃO resolve
+### HTTP/2: Não Resolve
 
 É crucial entender os limites do protocolo. O HTTP/2 **não é uma bala de prata**. Ele não resolve:
 
@@ -248,7 +248,7 @@ A inspeção pelo Chrome DevTools (com as colunas *Method*, *Protocol*, *Time* e
 
 > **Regra de ouro:** o HTTP/2 maximiza o potencial de uma boa aplicação web. Não salva uma aplicação ruim.
 
-### A web mudou de tamanho
+### Peso das Páginas Web
 
 Os dados do [HTTP Archive](https://httparchive.org/reports/state-of-the-web) mostram a escala do problema:
 
@@ -286,7 +286,7 @@ O suporte ao HTTP/2 é universal entre navegadores modernos. A tabela abaixo mos
 
 Praticamente **todos os navegadores hoje suportam HTTP/2**. A barreira não é mais o cliente — é a configuração do servidor.
 
-### Dados de uso
+### Adoção do HTTP/2
 
 Segundo o [W3Techs](https://w3techs.com/technologies/details/ce-http2), o HTTP/2 é utilizado por **35,2% de todos os sites** monitorados. O crescimento foi exponencial desde 2015, atingindo um pico de ~50% antes de uma leve queda — reflexo da migração gradual para o HTTP/3 (QUIC).
 
@@ -294,7 +294,7 @@ Segundo o [W3Techs](https://w3techs.com/technologies/details/ce-http2), o HTTP/2
 | :--: |
 | Evolução da adoção do HTTP/2 na web (W3Techs) |
 
-### Como verificar se seu servidor suporta HTTP/2
+### Verificação do HTTP/2
 
 Existem várias formas de verificar o suporte ao HTTP/2. Vou mostrar as mais práticas.
 
@@ -306,7 +306,7 @@ Existem várias formas de verificar o suporte ao HTTP/2. Vou mostrar as mais pr�
 | KeyCDN | [tools.keycdn.com/http2-test](https://tools.keycdn.com/http2-test) | Teste simples e rápido |
 | HTTP/2 Pro (**DESCONTINUADO**) | [http2.pro](https://http2.pro) | Análise detalhada com waterfall |
 
-#### Via linha de comando: header `Upgrade`
+#### curl: Header Upgrade
 
 Você pode verificar o suporte via [curl](https://curl.se/docs/manpage.html), forçando uma requisição HTTP/1.1 e observando se o servidor responde com o header de upgrade:
 
@@ -325,7 +325,7 @@ O header `Upgrade: h2,h2c` indica que o servidor suporta tanto HTTP/2 sobre TLS 
 
 Se usarmos a opção `--http2` em um domínio que **não** suporta o protocolo, a resposta será `HTTP/1.1 200 OK` — sem o upgrade.
 
-#### h2spec: validação de conformidade com a RFC
+#### h2spec: Conformidade
 
 A ferramenta [h2spec](https://github.com/summerwind/h2spec) é citada no repositório oficial do [IETF HTTP Working Group](https://github.com/httpwg/http2-spec) e valida se uma implementação está em conformidade conforme com as especificações do HTTP/2 (RFC 7540).
 
@@ -339,7 +339,7 @@ A ferramenta [h2spec](https://github.com/summerwind/h2spec) é citada no reposit
 
 A ferramenta h2spec executa 147 testes de conformidade da RFC. O [Apache httpd](https://httpd.apache.org) no domínio apache.org passou em 146 — uma taxa de conformidade de 99,3%, demonstrando implementação robusta do protocolo.
 
-### Implementações e o ecossistema IETF
+### Ecossistema IETF
 
 O [IETF HTTP Working Group](https://github.com/httpwg) mantém no GitHub um repositório dedicado ao [http2-spec](https://github.com/httpwg/http2-spec/wiki/Implementations), que lista todas as implementações conhecidas do protocolo: Apache, Nginx, Caddy, Envoy, Traefik, HAProxy, e dezenas de outras.
 
@@ -351,7 +351,7 @@ O mesmo repositório inclui uma [lista de ferramentas](https://github.com/httpwg
 
 Para qualquer implementação em produção, a verificação de conformidade com as RFCs é essencial. Não basta "funcionar" — é preciso garantir interoperabilidade entre clientes e servidores de diferentes fabricantes.
 
-### Conclusão: a pergunta não é mais "vale a pena?"
+### Conclusão
 
 Passaram-se mais de 25 anos desde a primeira versão do HTTP, e a web hoje é um ecossistema radicalmente diferente do que Tim Berners-Lee imaginou no CERN. Páginas que pesam mais de 2,6 MB com 70+ recursos na mediana não cabem nos limites de um protocolo projetado para documentos pequenos e estáticos.
 
