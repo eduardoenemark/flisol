@@ -1,14 +1,14 @@
-# HTTP/2: +Performance
+# HTTP/2: Performance Real
 
 ![FliSol 2024 — Festival Livre de Software](imgs/flisol.png)
 
 > *Este artigo é baseado na apresentação "HTTP/2: +Performance" apresentada no FliSol 2024.*
 
-Se você é desenvolvedor ou trabalha com infraestrutura web, já deve ter sentido que uma página que deveria carregar em segundos leva mais do que o esperado. A primeira reação é culpar o JavaScript, o tamanho das imagens, a conexão do usuário. Mas existe um fator que muitas vezes fica escondido atrás dessas camadas — e é o protocolo de transporte.
+Se você é desenvolvedor ou trabalha com infraestrutura web, já deve ter sentido que uma página que deveria carregar em segundos leva mais do que o esperado. A primeira reação é culpar o JavaScript, o tamanho das imagens, a conexão do usuário. Mas existe um fator que muitas vezes fica escondido atrás dessas camadas.
 
-A web cresceu. Segundo o [HTTP Archive Web Almanac 2024](https://almanac.httparchive.org/en/2024/page-weight), as páginas desktop pesam em média **2.652 KB** (~2,6 MB) e carregam **~71 recursos na mediana** — chegando a mais de 170 nos sites mais pesados. O HTTP/1.1, nascido em 1997, não foi projetado para essa realidade. Ele sobreviveu por quase duas décadas com "puxadinhos" — múltiplas conexões paralelas, sprites em imagem, *domain sharding* — mas chegou o limite.
+A web cresceu. Segundo o [HTTP Archive Web Almanac 2024](https://almanac.httparchive.org/en/2024/page-weight), as páginas desktop pesam em média **2.652 KB** (~2,6 MB) e carregam **~71 recursos na mediana** — chegando a mais de 170 nos sites mais pesados. O HTTP/1.1, nascido em 1997, não foi projetado para essa realidade. Ele sobreviveu por quase duas décadas com "puxadinhos" — múltiplas conexões paralelas, *sprites* de imagem, *domain sharding* — mas chegou o limite.
 
-O HTTP/2 não é uma evolução incremental. É uma **reestruturação completa** de como os dados trafegam entre cliente e servidor. A diferença é substancial e carece de nossa atenção para entendimento do funcionamento desta versão.
+O HTTP/2 não é uma evolução incremental. É uma **reestruturação completa** de como os dados trafegam entre cliente e servidor. A diferença é substancial e carece de nossa atenção para o entendimento do funcionamento desta versão.
 
 ### Internet vs Web
 
@@ -28,7 +28,7 @@ O primeiro HTTP era tão minimalista que não tinha headers, códigos de status 
 GET /mydoc.html
 ```
 
-E a resposta era o conteúdo HTML puro. Sem metadados. Sem controle. Funcionou enquanto a web eram poucas páginas estáticas em laboratórios de pesquisa:
+E a resposta era o conteúdo HTML puro. Sem metadados. Sem controle. Funcionou enquanto a web era composta por poucas páginas estáticas em laboratórios de pesquisa:
 
 ```html
 <html>
@@ -43,7 +43,11 @@ O HTTP/1.0 trouxe métodos (`GET`, `POST`), headers, códigos de status e suport
 ```cli
 GET /mypage.html HTTP/1.0
 User-Agent: NCSA_Mosaic/2.0 (Windows 3.1)
+```
 
+*Response*:
+
+```cli
 200 OK
 Date: Tue, 15 Nov 1994 08:12:31 GMT
 Server: CERN/3.0 libwww/2.17
@@ -52,19 +56,6 @@ Content-Type: text/html
 A page with an image
   <IMG SRC="/myimage.gif">
 </HTML>
-```
-
-*Response:*
-
-```cli
-GET /myimage.gif HTTP/1.0
-User-Agent: NCSA_Mosaic/2.0 (Windows 3.1)
-
-200 OK
-Date: Tue, 15 Nov 1994 08:12:32 GMT
-Server: CERN/3.0 libwww/2.17
-Content-Type: text/gif
-(image content)
 ```
 
 Cada recurso precisava de uma nova conexão. Se a página tinha uma imagem, o navegador abria outra conexão TCP e fazia outro `GET`. Era funcional, mas ineficiente.
@@ -77,13 +68,14 @@ O HTTP/1.1 trouxe melhorias que ainda são a base do desenvolvimento web moderno
 - **Pipelining** — enviar múltiplas requisições na mesma conexão (pouco usado na prática)
 - **Chunked transfer encoding** — body com tamanho desconhecido
 - **Cache control** via headers — `Cache-Control`, `ETag` e `Last-Modified`
-- **Novos headers**: `Host`, `Accept-Encoding`, `CORS` e `CSP`
+- **Novos headers**: `Host`, `Accept-Encoding`
+- **Segurança**: `CORS` (*Cross-Origin Resource Sharing*) e `CSP` (*Content Security Policy*)
 
 O HTTP/1.1 se tornou tão onipresente que arquiteturas inteiras foram construídas sobre ele: **SOA** (Service-Oriented Architecture), **REST** (Representational State Transfer). Porém, a performance dava um tom limitante na transferência de recursos.
 
 > *"Temos um HTTP na versão 1.1 muito bem funcional e conhecido na Web, além de padrões de desenvolvimento como SOA e REST construídos sobre ele, porém não tão performático."*
 
-> **Tecnologias entre versões do HTTP:** SSL da Netscape em 1994 para um HTTP +seguro que depois virou o TLS, Server-sent events. Ajax, WebSocket *et al*.
+> **Tecnologias entre versões do HTTP:** SSL da Netscape em 1994 para um HTTP +seguro que depois virou o TLS, Server-sent events. Ajax, WebSocket entre outros.
 
 ### SPDY (2009)
 
@@ -99,7 +91,7 @@ O SPDY introduziu três mecanismos importantes:
 
 O resultado foi impressionante: **até 64% de redução no tempo de carregamento** nas condições ideais de teste (link DSL, single-domain com server hint), conforme documentado no [SPDY Whitepaper](https://www.chromium.org/spdy/spdy-whitepaper). O SPDY provou que o HTTP poderia ser muito mais rápido — e que conceitos antes exclusivos da camada de transporte (TCP) poderiam ser aplicados na camada de aplicação.
 
-Em maio de 2015, publicado o **HTTP/2 (RFC 7540)** — essencialmente o SPDY oficializado como padrão IETF.
+Em maio de 2015, foi publicado o **HTTP/2 (RFC 7540)** — essencialmente o SPDY oficializado como padrão IETF.
 
 ### HTTP/1.1: Estrutura
 
@@ -113,7 +105,7 @@ O HTTP/1.1 é um protocolo **textual**. Cada mensagem é composta por três part
 
 | ![anatomia HTTP/1.1](imgs/anatomia-http1.png) |
 | :--: |
-| Anatomia do HTTP/1.1*<sup><a href="#6">6</a></sup> |
+| Anatomia do HTTP/1.1 |
 
 Cada caractere, cada espaço, cada `\r\n` é processado pelo navegador, *client*, e pelo servidor. Headers são repetidos a cada requisição. Se você tem 20 headers de 500 bytes cada e faz 100 requisições, são **1 MB de metadados** trafegando na rede.
 
@@ -149,13 +141,13 @@ A RFC 2616 (junho de 1999) orientava que clientes abrissem **no máximo 2 conex�
 
 A web mudou. A RFC 7230 (junho de 2014) relaxou a recomendação, e os navegadores modernos tendem a limitar **6 conexões simultâneas por domínio**. O Firefox expõe esse limite na propriedade `network.http.max-persistent-connections-per-server`, com valor 6 por padrão.
 
-O problema é escalar: se uma página moderna tem 100 recursos de um mesmo domínio, e o navegador abre no máximo 6 conexões, **94 recursos ficam esperando na fila**. É o que chamamos de *head-of-line blocking* — a requisição mais lenta bloqueia todas as seguintes.
+O problema é escalar: se uma página moderna tem 100 recursos de um mesmo domínio, e o navegador abre no máximo 6 conexões, **94 recursos ficam esperando na fila**. Logo, percebe-se a existência de um *blocking* no esquema de *input/output* da conexão. No HTTP/2 este bloqueio não existe, temos um *non blocking*.
 
 | ![HTTP/1.1: multiplas conexões em paralelo](imgs/http1-multiple-parallel-connections.png) |
 | :--: |
 | HTTP/1.1: Múltiplas conexões em paralelo (*HTTP/2 in Action, Barry Pollard. Manning Publications, 2019*) |
 
-*No HTTP/1.1, os navegadores limitam a 6 conexões simultâneas por domínio. Os recursos excedentes ficam na fila (*stalled*), aguardando uma conexão liberar*
+No HTTP/1.1, os navegadores limitam a 6 conexões simultâneas por domínio. Os recursos excedentes ficam na fila (*stalled*), aguardando uma conexão liberar.
 
 E se a página referencia recursos de outros domínios? Cada domínio adicional gera novas conexões. O resultado é: dezenas de conexões TCP abertas, cada uma com seu handshake TLS, consumindo memória no servidor e na rede.
 
@@ -165,9 +157,9 @@ No HTTP/2, todos os recursos trafegam em **streams** dentro de uma única conex�
 
 | ![HTTP/2: Conexão multiplexada](imgs/http2-multiplexed-connection.png) |
 | :--: |
-| HTTP/2: Conexão multiplexada (*HTTP/2 in Action, Barry Pollard. Manning Publications, 2019) |
+| HTTP/2: Conexão multiplexada (*HTTP/2 in Action, Barry Pollard. Manning Publications, 2019*) |
 
-Resultado: **um único handshake TCP**, zero head-of-line blocking entre streams, e throughput significativamente mais eficiente.
+Resultado: **um único handshake TCP**, zero blocking entre streams, e throughput significativamente mais eficiente.
 
 ### Benchmarks: HTTP/1.1 vs HTTP/2
 
@@ -179,7 +171,7 @@ Para demonstrar a diferença na prática, realizei testes comparativos utilizand
 
 | ![tunetheweb http performance test ](imgs/tunetheweb-http-performance-site.png) |
 | :--: |
-| Tune The Web: HTTP Performance Test (*HTTP: The Definitive Guide. David Gourley & Brian Totty. O'Reilly, 2002*) |
+| *Tune The Web: HTTP Performance Test* |
 
 ```text
 Tempo total: 61,321 segundos
@@ -198,7 +190,7 @@ A inspeção pelo Chrome DevTools revela o problema na prática: múltiplas cone
 | :--: |
 | Tune The Web — Resultado HTTP/2: 1,7s para 360 requisições |
 
-*O mesmo teste com HTTP/2 com uma redução de ~97% no tempo total. A diferença vem da multiplexação sobre uma única conexão TCP.*
+*O mesmo teste com HTTP/2 apresenta uma redução de ~97% no tempo total. A diferença vem da multiplexação sobre uma única conexão TCP.*
 
 ```text
 Tempo total: 1,714 segundos
@@ -213,7 +205,7 @@ A inspeção pelo DevTools confirma: apenas **1 conexão TCP** ativa, com todos 
 | :--: |
 | Chrome DevTools — Waterfall do teste HTTP/2 |
 
-*Com HTTP/2, todas as 360 requisições compartilham o mesmo Connection ID. Não há não há fila de espera, *stalled* — apenas uma conexão TCP processando todos os streams em paralelo.*
+*Com HTTP/2, todas as 360 requisições compartilham o mesmo Connection ID. Não há fila de espera, *stalled* — apenas uma conexão TCP processando todos os streams em paralelo.*
 
 #### HTTP2 Demo
 
@@ -232,21 +224,6 @@ A inspeção pelo Chrome DevTools (com as colunas *Method*, *Protocol*, *Time* e
 | ![http2demo http performance test devtools ](imgs/http2demo-devtools.png) |
 | :--: |
 | Chrome DevTools — HTTP/2 no http2demo.io |
-
-### HTTP/2: Não Resolve
-
-É crucial entender os limites do protocolo. O HTTP/2 **não é uma bala de prata**. Ele não resolve:
-
-| Problema | Por que o HTTP/2 não ajuda |
-|----------|---------------------------|
-| Páginas mal estruturadas | Imagens gigantes, CSS/JS sem uso, código desorganizado — isso é problema de arquitetura frontend |
-| Backend lento | Se seu servidor demora 5s para processar uma query SQL, o protocolo não acelera a lógica |
-| Falta de estratégia de cache | Sem `Cache-Control` bem configurado, cada requisição volta ao servidor |
-| Ausência de compressão do body | Gzip/Brotli ainda são necessários — o HTTP/2 comprime headers, não bodies |
-| Excesso de headers personalizados | Headers desnecessários aumentam o overhead mesmo com HPACK |
-| Requisição única para um recurso | A diferença entre 1 e 2 requisições é marginal em qualquer protocolo |
-
-> **Regra de ouro:** o HTTP/2 maximiza o potencial de uma boa aplicação web. Não salva uma aplicação ruim.
 
 ### Peso das Páginas Web
 
@@ -306,28 +283,48 @@ Existem várias formas de verificar o suporte ao HTTP/2. Vou mostrar as mais pr�
 | KeyCDN | [tools.keycdn.com/http2-test](https://tools.keycdn.com/http2-test) | Teste simples e rápido |
 | HTTP/2 Pro (**DESCONTINUADO**) | [http2.pro](https://http2.pro) | Análise detalhada com waterfall |
 
-#### curl: Header Upgrade
+#### curl
 
-Você pode verificar o suporte via [curl](https://curl.se/docs/manpage.html), forçando uma requisição HTTP/1.1 e observando se o servidor responde com o header de upgrade:
+Você pode verificar o suporte via [curl](https://curl.se/docs/manpage.html), forçando uma requisição HTTP/2 ao servidor e observar se ao final se o response é igual a **2**. No exemplo de comando foi adicionado *-k* (ignorar validação de certificado)  e *-v* (logar todo o fluxo da requisição):
 
 ```bash
-curl -kvo /dev/null --http1.1 -L https://debian.org
+curl --http2 -k -v -I -s -o /dev/null -w "%{http_version}\n" https://debian.org     
 ```
 
-Se o servidor suporta HTTP/2, a resposta incluirá:
+**Response:**
 
 ```text
-< Upgrade: h2,h2c
-< Connection: Upgrade
+* Host debian.org:443 was resolved.
+...
+* ALPN: curl offers h2,http/1.1
+...
+* using HTTP/2
+...
+> HEAD / HTTP/2
+> Host: debian.org
+> User-Agent: curl/8.20.0
+> Accept: */*
+> 
+* Request completely sent off
+...
+< HTTP/2 302 
+< server: Varnish
+< retry-after: 0
+< location: https://www.debian.org/
+< accept-ranges: bytes
+...
+< content-length: 0
+< 
+{ [0 bytes data]
+* Connection #0 to host debian.org:443 left intact
+2
 ```
 
-O header `Upgrade: h2,h2c` indica que o servidor suporta tanto HTTP/2 sobre TLS (`h2`) quanto HTTP/2 puro (`h2c`).
-
-Se usarmos a opção `--http2` em um domínio que **não** suporta o protocolo, a resposta será `HTTP/1.1 200 OK` — sem o upgrade.
+Percebe-se no log da requisição a ocorrência de HTTP/2 no envio e, também, na resposta - 2 ao final.
 
 #### h2spec: Conformidade
 
-A ferramenta [h2spec](https://github.com/summerwind/h2spec) é citada no repositório oficial do [IETF HTTP Working Group](https://github.com/httpwg/http2-spec) e valida se uma implementação está em conformidade conforme com as especificações do HTTP/2 (RFC 7540).
+A ferramenta [h2spec](https://github.com/summerwind/h2spec) é citada no repositório oficial do [IETF HTTP Working Group](https://github.com/httpwg/http2-spec) e valida se uma implementação está em conformidade com as especificações do HTTP/2 (RFC 7540).
 
 ```bash
 ./h2spec -t -k -S -h apache.org -p 443
@@ -350,6 +347,21 @@ O [IETF HTTP Working Group](https://github.com/httpwg) mantém no GitHub um repo
 O mesmo repositório inclui uma [lista de ferramentas](https://github.com/httpwg/http2-spec/wiki/Tools) para testes e validação — desde *load testers* até *compliance checkers* como o h2spec.
 
 Para qualquer implementação em produção, a verificação de conformidade com as RFCs é essencial. Não basta "funcionar" — é preciso garantir interoperabilidade entre clientes e servidores de diferentes fabricantes.
+
+### HTTP/2: Não Resolve
+
+É crucial entender os limites do protocolo. O HTTP/2 **não é uma bala de prata**. Ele não resolve:
+
+| Problema | Por que o HTTP/2 não ajuda |
+|----------|---------------------------|
+| Páginas mal estruturadas | Imagens gigantes, CSS/JS sem uso, código desorganizado — isso é problema de arquitetura frontend |
+| Backend lento | Se seu servidor demora 5s para processar uma query SQL, o protocolo não acelera a lógica |
+| Falta de estratégia de cache | Sem `Cache-Control` bem configurado, cada requisição volta ao servidor |
+| Ausência de compressão do body | Gzip/Brotli ainda são necessários — o HTTP/2 comprime headers, não bodies |
+| Excesso de headers personalizados | Headers desnecessários aumentam o overhead mesmo com HPACK |
+| Requisição única para um recurso | A diferença entre 1 e 2 requisições é marginal em qualquer protocolo |
+
+> **Regra de ouro:** o HTTP/2 maximiza o potencial de uma boa aplicação web. Não salva uma aplicação ruim.
 
 ### Conclusão
 
