@@ -18,7 +18,7 @@ A Internet é a infraestrutura — o TCP/IP, os roteadores, os cabos. A Web é a
 
 Tim Berners-Lee e sua equipe no CERN desenvolveram o primeiro protótipo do HTTP entre 1989 e 1991. A ideia era simples: permitir que pesquisadores compartilhassem documentos de forma padronizada. O que ninguém imaginava em 1991 é que, mais de três décadas depois, essa mesma especificação básica ainda sustentaria bilhões de requisições por dia.
 
-### A linha do tempo: de um GET a uma única linha até o protocolo binário moderno
+### Linha do tempo
 
 #### HTTP/0.9 — Agosto de 1991: apenas uma linha
 
@@ -304,7 +304,7 @@ Existem várias formas de verificar o suporte ao HTTP/2. Vou mostrar as mais pr�
 |------------|-----|-----------|
 | Google HTTP Dev | [http.dev/2/test](https://http.dev/2/test) | Teste oficial do Google |
 | KeyCDN | [tools.keycdn.com/http2-test](https://tools.keycdn.com/http2-test) | Teste simples e rápido |
-| HTTP/2 Pro | [http2.pro](https://http2.pro) | Análise detalhada com waterfall |
+| HTTP/2 Pro (**DESCONTINUADO**) | [http2.pro](https://http2.pro) | Análise detalhada com waterfall |
 
 #### Via linha de comando: header `Upgrade`
 
