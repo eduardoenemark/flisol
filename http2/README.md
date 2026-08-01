@@ -1,6 +1,6 @@
 # HTTP/2: Performance Real
 
-![FliSol 2024 — Festival Livre de Software](imgs/flisol.png)
+![FliSol 2024 — Festival Livre de Software](imgs/http1.x-banner.png)
 
 > *Este artigo é baseado na apresentação "HTTP/2: +Performance" apresentada no FliSol 2024.*
 
