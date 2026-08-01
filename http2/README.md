@@ -4,9 +4,9 @@
 
 > *Este artigo é baseado na apresentação "HTTP/2: +Performance" apresentada no FliSol 2024.*
 
-Se você é desenvolvedor ou trabalha com infraestrutura web, já deve ter sentido que uma página que deveria carregar em segundos leva mais tempo do que o esperado. A primeira reação é culpar o JavaScript, o tamanho das imagens, a conexão do usuário. Mas, existe um fator que muitas vezes fica escondido atrás dessas camadas: o protocolo de aplicação.
+Se você é desenvolvedor ou trabalha com infraestrutura web, já deve ter sentido que uma página que deveria carregar em segundos leva mais tempo do que o esperado. A primeira reação é culpar o JavaScript, o tamanho das imagens, a conexão do usuário, mas existe um fator que muitas vezes fica escondido atrás dessas camadas: o protocolo de aplicação.
 
-A web cresceu. Segundo o [HTTP Archive Web Almanac 2024](https://almanac.httparchive.org/en/2024/page-weight), as páginas desktop pesam em média **2.652 KB** (~2,6 MB) e carregam **~71 recursos na mediana** — chegando a mais de 170 nos sites mais pesados. O HTTP/1.1, nascido em 1997, não foi projetado para essa realidade. Ele sobreviveu por quase duas décadas com "puxadinhos" — múltiplas conexões paralelas, *sprites* de imagem, *domain sharding* — mas chegou o limite.
+A web cresceu. Segundo o [HTTP Archive Web Almanac 2024](https://almanac.httparchive.org/en/2024/page-weight), as páginas desktop pesam em média **2.652 KB** (~2,6 MB), e carregam **~71 recursos na mediana** — chegando a mais de 170 nos sites mais pesados. O HTTP/1.1, nascido em 1997, não foi projetado para essa realidade. Ele sobreviveu por quase duas décadas com "puxadinhos" — múltiplas conexões paralelas, *sprites* de imagem, *domain sharding* — mas chegou o limite.
 
 O HTTP/2 não é uma evolução incremental. É uma **reestruturação completa** de como os dados trafegam entre cliente e servidor. A diferença é substancial e carece de nossa atenção para o entendimento do funcionamento desta versão.
 
@@ -22,7 +22,7 @@ Tim Berners-Lee e sua equipe no CERN desenvolveram o primeiro protótipo do HTTP
 
 #### HTTP/0.9 (Agosto de 1991)
 
-O primeiro HTTP era tão minimalista que não tinha headers, códigos de status ou body estruturado. Uma única linha:
+O primeiro HTTP era tão minimalista que não tinha headers, códigos de status ou body estruturado, uma única linha:
 
 ```cli
 GET /mydoc.html
@@ -38,7 +38,7 @@ E a resposta era o conteúdo HTML puro. Sem metadados. Sem controle. Funcionou e
 
 #### HTTP/1.0 (Maio de 1996)
 
-O HTTP/1.0 trouxe métodos (`GET`, `POST`), headers, códigos de status e suporte a múltiplos tipos de conteúdo. Pela primeira vez, era possível enviar uma página HTML com imagens embutidas em requisições separadas:
+O HTTP/1.0 trouxe métodos (`GET` e `POST`), headers, códigos de status e suporte a múltiplos tipos de conteúdo. Pela primeira vez, era possível enviar uma página HTML com imagens embutidas em requisições separadas:
 
 ```cli
 GET /mypage.html HTTP/1.0
@@ -71,11 +71,11 @@ O HTTP/1.1 trouxe melhorias que ainda são a base do desenvolvimento web moderno
 - **Novos headers**: `Host`, `Accept-Encoding`
 - **Segurança**: `CORS` (*Cross-Origin Resource Sharing*) e `CSP` (*Content Security Policy*)
 
-O HTTP/1.1 se tornou tão onipresente que arquiteturas inteiras foram construídas sobre ele: **SOA** (Service-Oriented Architecture), **REST** (Representational State Transfer). Porém, a performance dava um tom limitante na transferência de recursos.
+O HTTP/1.1 se tornou tão onipresente que arquiteturas inteiras foram construídas sobre ele: **SOA** (Service-Oriented Architecture) e **REST** (Representational State Transfer). Porém, a performance dava um tom limitante na transferência de recursos.
 
 > *"Temos um HTTP na versão 1.1 muito bem funcional e conhecido na Web, além de padrões de desenvolvimento como SOA e REST construídos sobre ele, porém não tão performático."*
 
-> **Tecnologias entre versões do HTTP:** SSL da Netscape em 1994 para um HTTP +seguro que depois virou o TLS, Server-sent events. Ajax, WebSocket entre outros.
+> **Tecnologias entre versões do HTTP:** SSL da Netscape em 1994 para um HTTP seguro que depois virou o TLS, SSE (Server-sent events), Ajax, WebSocket entre outros.
 
 ### SPDY (2009)
 
@@ -107,7 +107,7 @@ O HTTP/1.1 é um protocolo **textual**. Cada mensagem é composta por três part
 | :--: |
 | Anatomia do HTTP/1.1 |
 
-Cada caractere, cada espaço, cada `\r\n` é processado pelo navegador, *client*, e pelo servidor. Headers são repetidos a cada requisição. Se você tem 20 headers de 500 bytes cada e faz 100 requisições, são **1 MB de metadados** trafegando na rede.
+Cada caractere, cada espaço, cada `\r\n` é processado pelo navegador (*client*) e pelo servidor. Headers são repetidos a cada requisição. Se você tem 20 headers de 500 bytes cada e faz 100 requisições, são **1 MB de metadados** trafegando na rede.
 
 ### HTTP/2: Binário
 
@@ -373,4 +373,4 @@ O HTTP/2 não é uma evolução opcional — é uma resposta necessária à esca
 
 Mas o protocolo por si só não é solução mágica. Como destacado, o HTTP/2 maximiza aplicações bem construídas — e não salva aplicações mal arquitetadas. Imagens sem otimização, falta de cache, backends lentos e excessos de headers personalizados continuam sendo problemas reais que vão além do transporte.
 
-A adoção do HTTP/2 é hoje uma decisão pragmática: suporte universal nos navegadores, maturidade nas principais implementações (Apache, Nginx, Caddy), e a migração passa por configuração de servidor, não por reescrita de código. O próximo passo — o HTTP/3 com QUIC sobre UDP. Mas, enquanto ele se consolida, o HTTP/2 continua sendo o salto mais significativo de performance disponível hoje sem mudanças na infraestrutura de rede. A pergunta nunca foi "vale a pena?". É "por que ainda não migrei?".
+A adoção do HTTP/2 é hoje uma decisão pragmática: suporte universal nos navegadores, maturidade nas principais implementações (Apache, Nginx, Caddy), e a migração passa por configuração de servidor, não por reescrita de código. O próximo passo — o HTTP/3 com QUIC sobre UDP, mas enquanto ele se consolida, o HTTP/2 continua sendo o salto mais significativo de performance disponível hoje sem mudanças na infraestrutura de rede. A pergunta nunca foi "vale a pena?". É "por que ainda não migrei?".
