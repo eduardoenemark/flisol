@@ -4,7 +4,7 @@
 
 > *Este artigo é baseado na apresentação "HTTP/2: +Performance" apresentada no FliSol 2024.*
 
-Se você é desenvolvedor ou trabalha com infraestrutura web, já deve ter sentido que uma página que deveria carregar em segundos leva mais do que o esperado. A primeira reação é culpar o JavaScript, o tamanho das imagens, a conexão do usuário. Mas existe um fator que muitas vezes fica escondido atrás dessas camadas: o protocolo de aplicação.
+Se você é desenvolvedor ou trabalha com infraestrutura web, já deve ter sentido que uma página que deveria carregar em segundos leva mais tempo do que o esperado. A primeira reação é culpar o JavaScript, o tamanho das imagens, a conexão do usuário. Mas, existe um fator que muitas vezes fica escondido atrás dessas camadas: o protocolo de aplicação.
 
 A web cresceu. Segundo o [HTTP Archive Web Almanac 2024](https://almanac.httparchive.org/en/2024/page-weight), as páginas desktop pesam em média **2.652 KB** (~2,6 MB) e carregam **~71 recursos na mediana** — chegando a mais de 170 nos sites mais pesados. O HTTP/1.1, nascido em 1997, não foi projetado para essa realidade. Ele sobreviveu por quase duas décadas com "puxadinhos" — múltiplas conexões paralelas, *sprites* de imagem, *domain sharding* — mas chegou o limite.
 
@@ -111,7 +111,7 @@ Cada caractere, cada espaço, cada `\r\n` é processado pelo navegador, *client*
 
 ### HTTP/2: Binário
 
-No HTTP/2, as mesmas três partes continuam existindo (start line, headers, body). Mas a forma como são transmitidas muda completamente: **frames binários**, multiplexados sobre uma conexão única.
+No HTTP/2, as mesmas três partes continuam existindo (start line, headers, body). Mas, a forma como são transmitidas muda completamente: **frames binários**, multiplexados sobre uma conexão única.
 
 Em vez de texto legível por humanos, os dados são codificados em frames que são mais eficientes para processamento por máquina:
 
@@ -373,6 +373,4 @@ O HTTP/2 não é uma evolução opcional — é uma resposta necessária à esca
 
 Mas o protocolo por si só não é solução mágica. Como destacado, o HTTP/2 maximiza aplicações bem construídas — e não salva aplicações mal arquitetadas. Imagens sem otimização, falta de cache, backends lentos e excessos de headers personalizados continuam sendo problemas reais que vão além do transporte.
 
-A adoção do HTTP/2 é hoje uma decisão pragmática: suporte universal nos navegadores, maturidade nas principais implementações (Apache, Nginx, Caddy), e a migração passa por configuração de servidor, não por reescrita de código. O próximo passo — o HTTP/3 com QUIC sobre UDP — já está em andamento, endereçando o head-of-line blocking na camada de transporte. Mas enquanto ele se consolida, o HTTP/2 continua sendo o salto mais significativo de performance disponível hoje sem mudanças na infraestrutura de rede.
-
-A pergunta nunca foi "vale a pena?". É "por que ainda não migrei?".
+A adoção do HTTP/2 é hoje uma decisão pragmática: suporte universal nos navegadores, maturidade nas principais implementações (Apache, Nginx, Caddy), e a migração passa por configuração de servidor, não por reescrita de código. O próximo passo — o HTTP/3 com QUIC sobre UDP. Mas, enquanto ele se consolida, o HTTP/2 continua sendo o salto mais significativo de performance disponível hoje sem mudanças na infraestrutura de rede. A pergunta nunca foi "vale a pena?". É "por que ainda não migrei?".
