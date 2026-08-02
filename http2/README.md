@@ -62,14 +62,14 @@ Cada recurso precisava de uma nova conexão. Se a página tinha uma imagem, o na
 
 ### HTTP/1.1 (Janeiro de 1997)
 
-O HTTP/1.1 trouxe melhorias que ainda são a base do desenvolvimento web moderno:
+O HTTP/1.1 introduziu melhorias fundamentais que ainda sustentam a web moderna:
 
-- **Conexões persistentes** (`keep-alive`) — reutilizar a mesma conexão TCP
-- **Pipelining** — enviar múltiplas requisições na mesma conexão (pouco usado na prática)
-- **Chunked transfer encoding** — body com tamanho desconhecido
-- **Cache control** via headers — `Cache-Control`, `ETag` e `Last-Modified`
-- **Novos headers**: `Host`, `Accept-Encoding`
-- **Segurança**: `CORS` (*Cross-Origin Resource Sharing*) e `CSP` (*Content Security Policy*)
+- **Conexões persistentes (Keep-Alive):** Permite reutilizar a mesma conexão TCP para múltiplas requisições, reduzindo a latência;
+- **Pipelining:** Envio de várias requisições sem esperar as respostas (embora pouco utilizado e amplamente substituído pelo multiplexing do HTTP/2);
+- **Chunked Transfer Encoding:** Possibilita o envio de corpos de resposta com tamanho desconhecido no início da transmissão;
+- **Gestão Avançada de Cache:** Introdução de headers como Cache-Control, ETag e Last-Modified para validações mais eficientes;
+- **Expansão de Headers:** Obrigatoriedade do header Host (viabilizando múltiplos domínios por IP) e a inclusão de Range, Expect, TE e Transfer-Encoding;
+- **Suporte a Padrões de Segurança:** A flexibilidade do sistema de headers do HTTP/1.1 permitiu a implementação posterior de políticas como CORS (Cross-Origin Resource Sharing) e CSP (Content Security Policy).
 
 O HTTP/1.1 se tornou tão onipresente que arquiteturas inteiras foram construídas sobre ele: **SOA** (Service-Oriented Architecture) e **REST** (Representational State Transfer). Porém, a performance dava um tom limitante na transferência de recursos.
 
